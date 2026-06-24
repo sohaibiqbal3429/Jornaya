@@ -6,6 +6,7 @@ import { ObjectId, WithId } from 'mongodb';
 import { getMongoClient } from './dbConnect';
 
 export type SubmissionStatus = 'new' | 'seen' | 'archived';
+export type VerificationStatus = 'pending' | 'verified' | 'failed';
 
 export type Submission = {
   id: string;
@@ -13,6 +14,7 @@ export type Submission = {
   fullName: string;
   email: string;
   phone?: string;
+  zipCode?: string;
   company?: string;
   serviceInterest?: string;
   message?: string;
@@ -20,12 +22,22 @@ export type Submission = {
   consent_timestamp: string;
   consent_text_version: string;
   leadiD_token?: string;
+  original_leadiD_token?: string;
+  universal_leadid?: string;
   page_url: string;
   page_source: string;
   lead_id?: string;
   journey_identifier?: string;
   ip?: string;
   userAgent?: string;
+  leadid_debug?: Record<string, unknown> | null;
+  isVarified: boolean;
+  verification_status?: VerificationStatus;
+  verification_requestedAt?: string;
+  verification_completedAt?: string;
+  verification_leadiD_token?: string;
+  verification_error?: string;
+  verification_metadata?: Record<string, unknown> | null;
   createdAt: string;
   status: SubmissionStatus;
 };
@@ -43,6 +55,8 @@ type LocalSubmissionDocument = Omit<Submission, 'status'> & {
 type CreateSubmissionInput = Omit<Submission, 'id' | 'createdAt' | 'status'> & {
   leadiD_token: string;
 };
+
+type SubmissionPatch = Partial<Omit<Submission, 'id' | 'createdAt'>>;
 
 type ListSubmissionsParams = {
   query?: string;
@@ -83,13 +97,24 @@ function toSubmission(doc: SubmissionDocument): Submission {
     consent_checked: doc.consent_checked,
     consent_timestamp: doc.consent_timestamp,
     consent_text_version: doc.consent_text_version,
+    zipCode: doc.zipCode,
     leadiD_token: doc.leadiD_token,
+    original_leadiD_token: doc.original_leadiD_token,
+    universal_leadid: doc.universal_leadid,
     page_url: doc.page_url,
     page_source: doc.page_source,
     lead_id: doc.lead_id,
     journey_identifier: doc.journey_identifier,
     ip: doc.ip,
     userAgent: doc.userAgent,
+    leadid_debug: doc.leadid_debug,
+    isVarified: doc.isVarified,
+    verification_status: doc.verification_status,
+    verification_requestedAt: doc.verification_requestedAt,
+    verification_completedAt: doc.verification_completedAt,
+    verification_leadiD_token: doc.verification_leadiD_token,
+    verification_error: doc.verification_error,
+    verification_metadata: doc.verification_metadata,
     createdAt: doc.createdAt.toISOString(),
     status: doc.status,
   };
@@ -146,6 +171,9 @@ async function writeLocalDocs(docs: LocalSubmissionDocument[]) {
 function normalizeLocalDoc(doc: LocalSubmissionDocument): Submission {
   return {
     ...doc,
+    isVarified: doc.isVarified ?? false,
+    leadid_debug: doc.leadid_debug ?? null,
+    verification_metadata: doc.verification_metadata ?? null,
     status: doc.status ?? 'new',
   };
 }
@@ -211,6 +239,9 @@ async function createSubmissionLocal(input: CreateSubmissionInput) {
       ...input,
       id: randomUUID(),
       createdAt: new Date().toISOString(),
+      isVarified: input.isVarified ?? false,
+      leadid_debug: input.leadid_debug ?? null,
+      verification_metadata: input.verification_metadata ?? null,
       status: 'new',
     };
 
@@ -239,6 +270,10 @@ async function listSubmissionsLocal(params: ListSubmissionsParams) {
 }
 
 async function updateSubmissionStatusLocal(id: string, status: SubmissionStatus) {
+  return updateSubmissionFieldsLocal(id, { status });
+}
+
+async function updateSubmissionFieldsLocal(id: string, patch: SubmissionPatch) {
   return runWithLocalWriteLock(async () => {
     const docs = await readLocalDocs();
     const index = docs.findIndex((doc) => doc.id === id);
@@ -248,7 +283,7 @@ async function updateSubmissionStatusLocal(id: string, status: SubmissionStatus)
 
     const updated: Submission = {
       ...normalizeLocalDoc(docs[index]),
-      status,
+      ...patch,
     };
 
     docs[index] = updated;
@@ -276,6 +311,9 @@ export async function createSubmission(input: CreateSubmissionInput) {
     const doc: SubmissionStored = {
       ...input,
       createdAt: new Date(),
+      isVarified: input.isVarified ?? false,
+      leadid_debug: input.leadid_debug ?? null,
+      verification_metadata: input.verification_metadata ?? null,
       status: 'new',
     };
 
@@ -334,13 +372,17 @@ export async function listSubmissions(params: ListSubmissionsParams) {
 }
 
 export async function updateSubmissionStatus(id: string, status: SubmissionStatus) {
+  return updateSubmissionFields(id, { status });
+}
+
+export async function updateSubmissionFields(id: string, patch: SubmissionPatch) {
   if (ObjectId.isValid(id)) {
     try {
       const collection = await getMongoCollection();
       const _id = new ObjectId(id);
       const result = await collection.findOneAndUpdate(
         { _id },
-        { $set: { status } },
+        { $set: patch },
         { returnDocument: 'after' },
       );
 
@@ -348,11 +390,11 @@ export async function updateSubmissionStatus(id: string, status: SubmissionStatu
         return toSubmission(result);
       }
     } catch {
-      return updateSubmissionStatusLocal(id, status);
+      return updateSubmissionFieldsLocal(id, patch);
     }
   }
 
-  return updateSubmissionStatusLocal(id, status);
+  return updateSubmissionFieldsLocal(id, patch);
 }
 
 export async function deleteSubmission(id: string) {

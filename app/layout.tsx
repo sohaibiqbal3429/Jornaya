@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
-import { LeadIdLoader } from '@/components/LeadIdLoader'
+import { LeadIdProvider } from '@/components/leadid/LeadIdProvider'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="theme-dark">
       <head><script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('alpha-theme');var c=document.documentElement.classList;c.remove('theme-dark','theme-light');c.add(t==='theme-light'?'theme-light':'theme-dark');}catch(e){}})();` }} /></head>
-      <body className="font-sans antialiased"><LeadIdLoader />{children}<Analytics /></body>
+      <body className="font-sans antialiased"><LeadIdProvider>{children}</LeadIdProvider><Analytics /></body>
     </html>
   )
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowRight,
   BadgeCheck,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { BrandMark } from '@/components/BrandMark';
+import { useLeadId } from '@/components/leadid/LeadIdProvider';
 import { PremiumSubmissionAlert } from '@/components/PremiumSubmissionAlert';
 
 type FormData = {
@@ -194,7 +195,9 @@ function AnimatedPanel({ children, className = '' }: { children: ReactNode; clas
 }
 
 export default function Home() {
+  const { debug: leadIdDebug, waitForValidToken } = useLeadId();
   const consentTextVersion = 'alpha-legal-v1.0';
+  const [verificationParentSubmissionId, setVerificationParentSubmissionId] = useState('');
   const structuredData = JSON.stringify({
     '@context': 'https://schema.org',
     '@graph': [
@@ -235,7 +238,7 @@ export default function Home() {
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentError, setConsentError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FormFieldName, string>>>({});
-  const leadIdTokenRef = useRef<HTMLInputElement>(null);
+  const mirroredLeadIdTokenRef = useRef<HTMLInputElement>(null);
   const [submissionAlert, setSubmissionAlert] = useState<SubmissionAlertState>({
     open: false,
     title: '',
@@ -243,6 +246,11 @@ export default function Home() {
     variant: 'success',
   });
   const [formData, setFormData] = useState<FormData>(initialFormData);
+
+  useEffect(() => {
+    const parentId = new URLSearchParams(window.location.search).get('verification_parent_submission_id')?.trim() || '';
+    setVerificationParentSubmissionId(parentId);
+  }, []);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -295,7 +303,7 @@ export default function Home() {
       return;
     }
 
-    const leadIdTokenValue = leadIdTokenRef.current?.value.trim() || '';
+    const leadIdTokenValue = await waitForValidToken(6_000);
 
     if (!leadIdTokenValue) {
       setSubmissionAlert({
@@ -312,14 +320,23 @@ export default function Home() {
       fullName: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
       phone: formData.phone,
+      zipCode: formData.zipCode,
       serviceInterest: 'Alpha Legal Intake consultation',
       message: `Legal intake requested for ZIP code ${formData.zipCode}.`,
       consent_checked: true,
       consent_timestamp: new Date().toISOString(),
       consent_text_version: consentTextVersion,
       leadiD_token: leadIdTokenValue,
+      leadid_token: leadIdTokenValue,
+      universal_leadid: mirroredLeadIdTokenRef.current?.value.trim() || leadIdTokenValue,
       page_url: window.location.href,
-      page_source: 'Alpha Legal Intake landing page',
+      page_source: verificationParentSubmissionId ? 'Alpha Legal Intake landing page verification replay' : 'Alpha Legal Intake landing page',
+      leadid_debug: {
+        ...leadIdDebug,
+        submittedAt: new Date().toISOString(),
+        verificationParentSubmissionId: verificationParentSubmissionId || null,
+      },
+      verification_parent_submission_id: verificationParentSubmissionId || undefined,
     };
 
     try {
@@ -707,7 +724,8 @@ export default function Home() {
             </div>
 
             <form onSubmit={handleSubmit} className="rounded-[3rem] border border-white/90 bg-white/90 p-6 shadow-[0_28px_85px_rgba(8,32,51,0.12)] backdrop-blur-xl sm:p-8 lg:p-10">
-              <input ref={leadIdTokenRef} id="leadid_token" name="universal_leadid" type="hidden" />
+              <input ref={mirroredLeadIdTokenRef} id="leadid_token_form" name="universal_leadid" type="hidden" />
+              <input name="verification_parent_submission_id" type="hidden" value={verificationParentSubmissionId} readOnly />
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#128a8f]">Secure legal intake</p>

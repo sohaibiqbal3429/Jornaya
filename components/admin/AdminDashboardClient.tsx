@@ -9,16 +9,26 @@ type Submission = {
   fullName: string;
   email: string;
   phone?: string;
+  zipCode?: string;
   company?: string;
   serviceInterest?: string;
   consent_checked: boolean;
   status: 'new' | 'seen' | 'archived';
   message?: string;
   page_url: string;
+  page_source?: string;
   consent_timestamp: string;
   leadiD_token?: string;
+  original_leadiD_token?: string;
+  universal_leadid?: string;
   lead_id?: string;
   journey_identifier?: string;
+  leadid_debug?: Record<string, unknown> | null;
+  isVarified: boolean;
+  verification_status?: string;
+  verification_leadiD_token?: string;
+  verification_error?: string;
+  verification_metadata?: Record<string, unknown> | null;
 };
 
 export default function AdminDashboardClient() {

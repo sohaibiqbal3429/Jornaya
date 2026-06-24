@@ -8,8 +8,6 @@ MONGODB_DB=alpha-legal-intake
 ADMIN_EMAIL=admin@alphalegalintake.com
 ADMIN_PASSWORD=your_strong_password
 AUTH_SECRET=long_random_secret_for_signing_sessions
-NEXT_PUBLIC_LEADID_SCRIPT_SRC=https://create.lidstatic.com/campaign/your-campaign-key.js?snippet_version=2&f=reset
-NEXT_PUBLIC_LEADID_NOSCRIPT_URL=https://create.leadid.com/noscript.gif?lac=your-lac&lck=your-campaign-key&snippet_version=2
 ```
 
 > Keep secrets only in `.env.local` (never commit them).
@@ -34,11 +32,14 @@ Open:
 - Admin APIs for listing, updating, deleting submissions.
 - Live admin table refresh every 8 seconds.
 - Filters/search, detail modal, status actions, and CSV export.
+- Official Jornaya/LeadiD browser script integration using campaign key `f3982147-9948-8ae0-9315-8ceb32269185`.
+- Canonical and mirrored `universal_leadid` hidden fields with polling, validation, submit waiting, and `window.LeadiD.reInit()` recovery.
+- LeadID debug page at `/leadid-debug`.
+- Replay verification worker flow using Playwright to obtain a second verification token without overwriting the original token.
 
 ## Safe deployment notes
 
 - Configure all env variables in your hosting provider dashboard.
-- Add the exact LeadID/Jornaya script URL from your LeadID account to `NEXT_PUBLIC_LEADID_SCRIPT_SRC`.
-- Add the matching noscript image URL to `NEXT_PUBLIC_LEADID_NOSCRIPT_URL`.
 - Rotate any previously exposed credentials before deploying.
 - Use HTTPS in production so secure cookies are fully protected.
+- If you want the Playwright verification worker to run in production, the runtime must have Chromium available for Playwright.
