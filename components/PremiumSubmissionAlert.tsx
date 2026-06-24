@@ -47,7 +47,7 @@ export function PremiumSubmissionAlert({
         role="dialog"
         aria-modal="true"
         aria-labelledby="submission-alert-title"
-        className="apha-modal-enter relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,32,51,0.96),rgba(6,24,38,0.94))] text-white shadow-[0_36px_120px_rgba(0,0,0,0.45)]"
+        className="alpha-modal-enter relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,32,51,0.96),rgba(6,24,38,0.94))] text-white shadow-[0_36px_120px_rgba(0,0,0,0.45)]"
       >
         <div
           className={`absolute inset-x-0 top-0 h-1 ${
@@ -95,8 +95,8 @@ export function PremiumSubmissionAlert({
 
           <div className="mt-5 rounded-[1.4rem] border border-white/10 bg-white/[0.05] p-4 text-sm text-[#d8eef0]">
             {isSuccess
-              ? 'Your information has been queued for secure review. Apha uses this request to help coordinate the next conversation around available Medicare-related coverage options.'
-              : 'The secure intake record could not be completed. Please retry in a moment or contact Apha Health Plan directly for assistance.'}
+              ? 'Your information has been queued for secure review. Alpha uses this request to help coordinate accident intake, verification, and legal team follow-up.'
+              : 'The secure intake record could not be completed. Please retry in a moment or contact Alpha Legal Intake directly for assistance.'}
           </div>
 
           <button
@@ -108,7 +108,7 @@ export function PremiumSubmissionAlert({
                 : 'bg-gradient-to-r from-[#f97316] to-[#ef4444] shadow-[0_18px_42px_rgba(249,115,22,0.22)] hover:-translate-y-0.5'
             }`}
           >
-            {isSuccess ? 'Return to Apha' : 'Try again'}
+            {isSuccess ? 'Return to Alpha' : 'Try again'}
           </button>
         </div>
       </div>
