@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowRight,
   BadgeCheck,
@@ -179,20 +179,6 @@ const faqs = [
 
 const fullConsentText = `By clicking "Send my intake request" or calling the number listed on this page, you agree that Alpha Legal Intake and its participating legal marketing or attorney partners may contact you by phone, text message, or email at the contact information you provide, including through automated technology where permitted by law, about motor vehicle accident intake, personal injury lead qualification, live transfer coordination, and related legal services. Your consent is not a condition of purchase. Message and data rates may apply. You may revoke consent at any time. Alpha Legal Intake is not a law firm, does not provide legal advice, and does not guarantee case acceptance or any legal outcome.`;
 
-function generateLeadId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID().toUpperCase();
-  }
-
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-    .replace(/[xy]/g, (char) => {
-      const random = Math.floor(Math.random() * 16);
-      const value = char === 'x' ? random : (random & 0x3) | 0x8;
-      return value.toString(16);
-    })
-    .toUpperCase();
-}
-
 function SectionIntro({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
   return (
     <div className="mx-auto max-w-3xl text-center">
@@ -249,7 +235,7 @@ export default function Home() {
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentError, setConsentError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FormFieldName, string>>>({});
-  const [leadIdToken, setLeadIdToken] = useState('');
+  const leadIdTokenRef = useRef<HTMLInputElement>(null);
   const [submissionAlert, setSubmissionAlert] = useState<SubmissionAlertState>({
     open: false,
     title: '',
@@ -257,10 +243,6 @@ export default function Home() {
     variant: 'success',
   });
   const [formData, setFormData] = useState<FormData>(initialFormData);
-
-  useEffect(() => {
-    setLeadIdToken(generateLeadId());
-  }, []);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -313,13 +295,13 @@ export default function Home() {
       return;
     }
 
-    const leadIdTokenValue = leadIdToken.trim();
+    const leadIdTokenValue = leadIdTokenRef.current?.value.trim() || '';
 
     if (!leadIdTokenValue) {
       setSubmissionAlert({
         open: true,
         title: 'Secure tracking token unavailable',
-        message: 'Please refresh the page so we can create a complete request record.',
+        message: 'The Jornaya LeadiD token is not available yet. Please wait a moment and try again.',
         variant: 'error',
       });
       return;
@@ -360,7 +342,6 @@ export default function Home() {
       });
 
       setFormData(initialFormData);
-      setLeadIdToken(generateLeadId());
       setConsentChecked(false);
       setConsentError('');
     } catch {
@@ -726,7 +707,7 @@ export default function Home() {
             </div>
 
             <form onSubmit={handleSubmit} className="rounded-[3rem] border border-white/90 bg-white/90 p-6 shadow-[0_28px_85px_rgba(8,32,51,0.12)] backdrop-blur-xl sm:p-8 lg:p-10">
-              <input id="leadid_token" name="universal_leadid" type="hidden" value={leadIdToken} readOnly />
+              <input ref={leadIdTokenRef} id="leadid_token" name="universal_leadid" type="hidden" />
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#128a8f]">Secure legal intake</p>
