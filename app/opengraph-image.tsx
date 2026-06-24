@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'Apha Health Plan premium Medicare guidance';
+export const alt = 'Alpha Legal Intake accident lead generation';
 export const size = {
   width: 1200,
   height: 630,
@@ -54,9 +54,9 @@ export default function OpenGraphImage() {
               AH
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ fontSize: '34px', fontWeight: 900, letterSpacing: '-0.05em' }}>Apha</div>
+              <div style={{ fontSize: '34px', fontWeight: 900, letterSpacing: '-0.05em' }}>Alpha</div>
               <div style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '0.34em', textTransform: 'uppercase', color: '#9ee7e3' }}>
-                Health Plan
+                Legal Intake
               </div>
             </div>
           </div>
@@ -75,13 +75,13 @@ export default function OpenGraphImage() {
                 color: '#c6fdf8',
               }}
             >
-              Modern Medicare guidance, designed around you
+              Premium accident intake for law firms
             </div>
             <div style={{ fontSize: '70px', fontWeight: 900, lineHeight: 0.96, letterSpacing: '-0.07em' }}>
-              Health plan decisions, made calmer and clearer.
+              Qualified Motor Vehicle Accident Leads for Law Firms
             </div>
             <div style={{ fontSize: '28px', lineHeight: 1.5, color: '#d8eef0' }}>
-              Premium consultation intake, compliant Medicare guidance, and licensed insurance support coordinated through Apha Health Plan.
+              Verified MVA leads, live transfer calls, case qualification, and legal call center support from Alpha Legal Intake.
             </div>
           </div>
         </div>

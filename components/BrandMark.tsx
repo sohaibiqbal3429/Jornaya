@@ -16,8 +16,8 @@ export function BrandMark({ tone = 'dark', size = 'default' }: BrandMarkProps) {
           compact ? 'h-10 w-10' : 'h-11 w-11'
         } shadow-[0_18px_38px_rgba(6,42,60,0.18)]`}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(94,234,212,0.92),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.2),transparent)]" />
-        <span className="relative text-lg font-black tracking-[-0.08em] text-white">AH</span>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(245,190,88,0.92),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.2),transparent)]" />
+        <span className="relative text-lg font-black tracking-[-0.08em] text-white">AL</span>
       </div>
       <div className="leading-none">
         <p
@@ -25,14 +25,14 @@ export function BrandMark({ tone = 'dark', size = 'default' }: BrandMarkProps) {
             compact ? 'text-[0.98rem]' : 'text-base'
           } ${darkTone ? 'text-[#082033]' : 'text-white'}`}
         >
-          Apha
+          Alpha
         </p>
         <p
           className={`font-semibold uppercase tracking-[0.24em] ${
             compact ? 'text-[0.62rem]' : 'text-[0.68rem]'
-          } ${darkTone ? 'text-[#4f7c83]' : 'text-[#9ee7e3]'}`}
+          } ${darkTone ? 'text-[#b07a18]' : 'text-[#f6d37a]'}`}
         >
-          Health Plan
+          Legal Intake
         </p>
       </div>
     </div>

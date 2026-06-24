@@ -1,93 +1,19 @@
 import type { Metadata } from 'next';
 import { LegalPageShell, type LegalSection } from '@/components/LegalPageShell';
 
-export const metadata: Metadata = {
-  title: 'Terms & Conditions',
-  description: 'Review the terms governing use of the Apha Health Plan website and Medicare consultation request experience.',
-};
+export const metadata: Metadata = { title: 'Terms & Conditions', description: 'Review the terms governing use of the Alpha Legal Intake website and legal intake request experience.' };
 
 const sections: LegalSection[] = [
-  {
-    title: 'Acceptance of Terms',
-    paragraphs: [
-      'These Terms & Conditions govern your access to and use of the Apha Health Plan website, including consultation request forms, informational content, and related digital services.',
-      'By using this website, you agree to these terms and to our Privacy Policy. If you do not agree, do not use the website or submit information through it.',
-    ],
-  },
-  {
-    title: 'Nature of the Website',
-    paragraphs: [
-      'Apha Health Plan is a privately operated website that provides Medicare-related educational content, consultation request tools, and pathways for communication with licensed insurance professionals.',
-      'Apha Health Plan is not a government agency, is not affiliated with or endorsed by Medicare or CMS, and is not itself an insurer, carrier, or health plan issuer.',
-    ],
-  },
-  {
-    title: 'No Guarantee of Plan Availability or Enrollment',
-    paragraphs: [
-      'Submitting a request through this website does not guarantee eligibility, plan availability, enrollment, coverage approval, or acceptance by any insurance company.',
-      'Plan options vary by ZIP code, service area, carrier participation, contract status, and individual eligibility. Enrollment is subject to applicable Medicare rules and enrollment periods, including Initial Enrollment Periods, Annual Enrollment Periods, and Special Enrollment Periods where available.',
-    ],
-  },
-  {
-    title: 'Communications and Consent',
-    paragraphs: [
-      'If you provide contact information, Apha Health Plan or a licensed insurance agent, insurance agency, or insurance company may contact you by phone, text message, or email regarding Medicare Advantage, Medicare Supplement Insurance, Prescription Drug Plan options, or related consultation services.',
-      'The purpose of these communications may include the solicitation of insurance. Your consent to receive communications is not a condition of purchase, and you may revoke consent as permitted by law.',
-    ],
-  },
-  {
-    title: 'Informational Use Only',
-    paragraphs: [
-      'Content on this website is provided for general informational purposes only. It is not legal advice, tax advice, medical advice, financial advice, or a substitute for reviewing official Medicare and carrier materials.',
-      'While Apha Health Plan strives to keep information current and accurate, we do not warrant that website content is complete, error-free, or suitable for every situation.',
-    ],
-  },
-  {
-    title: 'User Responsibilities',
-    paragraphs: [
-      'You agree to provide accurate information when submitting forms and to use the website only for lawful purposes. You may not use the website to transmit harmful code, impersonate another person, interfere with website operations, or attempt unauthorized access to systems or data.',
-      'If Apha Health Plan reasonably believes a submission is fraudulent, abusive, or unlawful, we may decline to process it and may take protective or legal action where appropriate.',
-    ],
-  },
-  {
-    title: 'Intellectual Property',
-    paragraphs: [
-      'All website content, branding, design elements, text, graphics, software, and other materials made available by Apha Health Plan are protected by applicable intellectual property laws and remain the property of Apha Health Plan or its licensors.',
-      'You may view and use the website for personal, non-commercial purposes only unless Apha Health Plan provides prior written permission for another use.',
-    ],
-  },
-  {
-    title: 'Third-Party Services and Links',
-    paragraphs: [
-      'This website may reference or link to third-party services, websites, or carriers. Apha Health Plan does not control and is not responsible for the content, terms, privacy practices, availability, or accuracy of third-party resources.',
-      'Your interactions with third parties are governed by the applicable third-party terms and policies.',
-    ],
-  },
-  {
-    title: 'Disclaimer of Warranties and Limitation of Liability',
-    paragraphs: [
-      'The website is provided on an "as is" and "as available" basis to the fullest extent permitted by law. Apha Health Plan disclaims all warranties, express or implied, including warranties of merchantability, fitness for a particular purpose, and non-infringement.',
-      'To the fullest extent permitted by law, Apha Health Plan will not be liable for indirect, incidental, consequential, special, punitive, or exemplary damages, or for any loss arising from your use of or inability to use the website, reliance on content, or interactions with third-party service providers or insurance entities.',
-    ],
-  },
-  {
-    title: 'Updates to These Terms',
-    paragraphs: [
-      'Apha Health Plan may revise these Terms & Conditions from time to time. Updated terms become effective when posted on this page unless a later effective date is stated.',
-      'Continued use of the website after updated terms are posted constitutes acceptance of the revised terms.',
-    ],
-  },
+  { title: 'Agreement to Terms', paragraphs: ['These Terms & Conditions govern your access to and use of the Alpha Legal Intake website, intake request forms, informational content, and related digital services.', 'By using the website, submitting information, or contacting us through the platform, you agree to these terms and all applicable laws.'] },
+  { title: 'Services and Role', paragraphs: ['Alpha Legal Intake is a legal intake, accident call center, and lead generation service provider for personal injury law firms and legal marketing teams.', 'Alpha Legal Intake is not a law firm, does not provide legal advice, and does not create an attorney-client relationship. Any attorney-client relationship can only be formed by a law firm under its own procedures.'] },
+  { title: 'No Guarantee', paragraphs: ['Submitting a request through this website does not guarantee that a law firm will accept a matter, contact a caller, provide representation, or achieve any result.', 'Lead availability, live transfer volume, qualification outcomes, and campaign performance vary by market, timing, criteria, and operational factors.'] },
+  { title: 'Communications Consent', paragraphs: ['If you provide contact information, Alpha Legal Intake and its participating legal marketing or attorney partners may contact you by phone, text message, or email regarding accident intake, personal injury lead qualification, live transfer coordination, and related legal services.', 'Your consent to receive communications is not a condition of purchase, and you may revoke consent as permitted by law.'] },
+  { title: 'Informational Content', paragraphs: ['Content on this website is provided for general informational purposes only. It is not legal advice, tax advice, financial advice, or a substitute for consultation with a qualified attorney.', 'While Alpha Legal Intake strives to keep website content current and accurate, we do not warrant that content is complete, error-free, or suitable for every situation.'] },
+  { title: 'Acceptable Use', paragraphs: ['You agree not to misuse the website, submit false or misleading information, interfere with site operations, attempt unauthorized access, or use the platform for unlawful purposes.', 'If Alpha Legal Intake reasonably believes a submission is fraudulent, abusive, or unlawful, we may decline to process it and may take protective or legal action where appropriate.'] },
+  { title: 'Intellectual Property', paragraphs: ['All website content, branding, design elements, text, graphics, software, and other materials made available by Alpha Legal Intake are protected by applicable intellectual property laws and remain the property of Alpha Legal Intake or its licensors.', 'You may view and use the website for personal, non-commercial purposes only unless Alpha Legal Intake provides prior written permission for another use.'] },
+  { title: 'Changes to Terms', paragraphs: ['Alpha Legal Intake may revise these Terms & Conditions from time to time. Updated terms become effective when posted on this page unless a later effective date is stated.', 'Your continued use of the website after changes are posted means you accept the updated terms.'] },
 ];
 
 export default function TermsOfServicePage() {
-  return (
-    <LegalPageShell
-      eyebrow="Website Terms"
-      title="Terms & Conditions"
-      intro="These terms define how the Apha Health Plan website may be used and set the framework for the Medicare consultation requests, educational content, and communication workflows offered through this platform."
-      effectiveDate="May 13, 2026"
-      documentLabel="Website Terms & Conditions"
-      sections={sections}
-    />
-  );
+  return <LegalPageShell eyebrow="Website Terms" title="Terms & Conditions" intro="These terms define how the Alpha Legal Intake website may be used and set the framework for legal intake requests, accident call center support, and communication workflows offered through this platform." effectiveDate="May 13, 2026" documentLabel="Terms & Conditions" sections={sections} />;
 }

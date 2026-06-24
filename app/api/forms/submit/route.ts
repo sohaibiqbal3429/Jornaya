@@ -12,19 +12,19 @@ export async function POST(req: NextRequest) {
     const userAgent = req.headers.get('user-agent') || undefined;
 
     const created = await createSubmission({
-      formType: body.formType || 'medicare_contact',
+      formType: body.formType || 'legal_intake_contact',
       fullName: body.fullName,
       email: body.email || '',
       phone: body.phone,
       company: body.company,
-      serviceInterest: body.serviceInterest || 'Apha Medicare guidance consultation',
+      serviceInterest: body.serviceInterest || 'Alpha Legal Intake consultation',
       message: body.message,
       consent_checked: body.consent_checked,
       consent_timestamp: body.consent_timestamp || new Date().toISOString(),
-      consent_text_version: body.consent_text_version || 'apha-v1.0',
+      consent_text_version: body.consent_text_version || 'alpha-legal-v1.0',
       leadiD_token: body.leadiD_token,
       page_url: body.page_url || req.nextUrl.toString(),
-      page_source: body.page_source || 'Apha Health Plan landing form',
+      page_source: body.page_source || 'Alpha Legal Intake landing form',
       lead_id: body.lead_id,
       journey_identifier: body.journey_identifier,
       ip,
