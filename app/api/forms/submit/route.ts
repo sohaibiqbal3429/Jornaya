@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, submission: created });
-  } catch {
+  } catch (error) {
+    console.error('Form submission failed.', error);
     return NextResponse.json(
       { error: 'Submission service unavailable. Check MongoDB connection and environment variables.' },
       { status: 503 },

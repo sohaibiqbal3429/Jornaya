@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { ObjectId, WithId } from 'mongodb';
 import { getMongoClient } from './dbConnect';
@@ -55,8 +56,19 @@ type ListSubmissionsParams = {
 };
 
 const LOCAL_STORE_PATH = path.join(process.cwd(), '.data', 'submissions.json');
+const TMP_STORE_PATH = path.join(os.tmpdir(), 'alpha-legal-intake', 'submissions.json');
 
 let localWriteQueue = Promise.resolve();
+let memoryStore: LocalSubmissionDocument[] = [];
+
+function getLocalStorePath() {
+  return process.env.VERCEL ? TMP_STORE_PATH : LOCAL_STORE_PATH;
+}
+
+function shouldUseMemoryStore(error: unknown) {
+  const nodeError = error as NodeJS.ErrnoException;
+  return nodeError.code === 'EACCES' || nodeError.code === 'EPERM' || nodeError.code === 'EROFS';
+}
 
 function toSubmission(doc: SubmissionDocument): Submission {
   return {
@@ -100,22 +112,35 @@ async function runWithLocalWriteLock<T>(operation: () => Promise<T>) {
 
 async function readLocalDocs() {
   try {
-    const fileContents = await readFile(LOCAL_STORE_PATH, 'utf8');
+    const fileContents = await readFile(getLocalStorePath(), 'utf8');
     const parsed = JSON.parse(fileContents);
     if (!Array.isArray(parsed)) return [];
     return parsed as LocalSubmissionDocument[];
   } catch (error) {
     const nodeError = error as NodeJS.ErrnoException;
     if (nodeError.code === 'ENOENT') {
-      return [];
+      return memoryStore;
+    }
+    if (shouldUseMemoryStore(error)) {
+      return memoryStore;
     }
     throw error;
   }
 }
 
 async function writeLocalDocs(docs: LocalSubmissionDocument[]) {
-  await mkdir(path.dirname(LOCAL_STORE_PATH), { recursive: true });
-  await writeFile(LOCAL_STORE_PATH, `${JSON.stringify(docs, null, 2)}\n`, 'utf8');
+  const storePath = getLocalStorePath();
+  memoryStore = docs;
+
+  try {
+    await mkdir(path.dirname(storePath), { recursive: true });
+    await writeFile(storePath, `${JSON.stringify(docs, null, 2)}\n`, 'utf8');
+  } catch (error) {
+    if (shouldUseMemoryStore(error)) {
+      return;
+    }
+    throw error;
+  }
 }
 
 function normalizeLocalDoc(doc: LocalSubmissionDocument): Submission {
