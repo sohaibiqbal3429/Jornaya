@@ -96,9 +96,14 @@ const initialDebugState: LeadIdDebugPayload = {
   playbackSignals: {},
 };
 
+function getDebugSignature(debug: LeadIdDebugPayload) {
+  return JSON.stringify(debug);
+}
+
 export function LeadIdProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [debug, setDebug] = useState<LeadIdDebugPayload>(initialDebugState);
+  const debugSignatureRef = useRef(getDebugSignature(initialDebugState));
   const routeHistoryRef = useRef<string[]>([]);
   const interactionCountRef = useRef(0);
   const tokenRef = useRef('');
@@ -137,13 +142,18 @@ export function LeadIdProvider({ children }: { children: ReactNode }) {
     const mirroredField = document.querySelector<HTMLInputElement>(
       'input#leadid_token_form[name="universal_leadid"]',
     );
+    const previousToken = tokenRef.current;
     const nextToken = canonicalField?.value.trim() ?? '';
     const tokenValid = isValidLeadIdToken(nextToken);
 
     tokenRef.current = nextToken;
 
+    let didMirrorSync = false;
     if (mirroredField) {
-      mirroredField.value = nextToken;
+      if (mirroredField.value !== nextToken) {
+        mirroredField.value = nextToken;
+        didMirrorSync = true;
+      }
     }
 
     const now = Date.now();
@@ -152,24 +162,37 @@ export function LeadIdProvider({ children }: { children: ReactNode }) {
       reInit('token-missing-after-timeout');
     }
 
-    setDebug((prev) => ({
-      ...prev,
-      scriptLoaded: prev.scriptLoaded || Boolean(window.LeadiD) || Boolean(canonicalField),
-      token: nextToken,
-      tokenValid,
-      jornayaAvailable: Boolean(window.LeadiD),
-      referrer: document.referrer,
-      landingUrl: landingUrlRef.current || window.location.href,
-      utmParams: getUtmParams(landingUrlRef.current || window.location.href),
-      routeHistory: routeHistoryRef.current,
-      interactionCount: interactionCountRef.current,
-      canonicalFieldPresent: Boolean(canonicalField),
-      mirroredFieldPresent: Boolean(mirroredField),
-      lastMirrorSyncAt: mirroredField ? new Date().toISOString() : prev.lastMirrorSyncAt,
-      lastReinitAt: lastReinitAtRef.current ? new Date(lastReinitAtRef.current).toISOString() : prev.lastReinitAt,
-      lastReinitReason: lastReinitReasonRef.current,
-      playbackSignals: getPlaybackSignals(),
-    }));
+    setDebug((prev) => {
+      const nextDebug: LeadIdDebugPayload = {
+        ...prev,
+        scriptLoaded: prev.scriptLoaded || Boolean(window.LeadiD) || Boolean(canonicalField),
+        token: nextToken,
+        tokenValid,
+        jornayaAvailable: Boolean(window.LeadiD),
+        referrer: document.referrer,
+        landingUrl: landingUrlRef.current || window.location.href,
+        utmParams: getUtmParams(landingUrlRef.current || window.location.href),
+        routeHistory: routeHistoryRef.current,
+        interactionCount: interactionCountRef.current,
+        canonicalFieldPresent: Boolean(canonicalField),
+        mirroredFieldPresent: Boolean(mirroredField),
+        lastMirrorSyncAt:
+          didMirrorSync || previousToken !== nextToken
+            ? new Date().toISOString()
+            : prev.lastMirrorSyncAt,
+        lastReinitAt: lastReinitAtRef.current ? new Date(lastReinitAtRef.current).toISOString() : prev.lastReinitAt,
+        lastReinitReason: lastReinitReasonRef.current,
+        playbackSignals: getPlaybackSignals(),
+      };
+
+      const nextSignature = getDebugSignature(nextDebug);
+      if (nextSignature === debugSignatureRef.current) {
+        return prev;
+      }
+
+      debugSignatureRef.current = nextSignature;
+      return nextDebug;
+    });
   });
 
   useEffect(() => {
@@ -194,23 +217,36 @@ export function LeadIdProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     syncLeadIdState();
 
+    const startedAt = Date.now();
     const intervalId = window.setInterval(() => {
       syncLeadIdState();
-    }, 500);
+
+      if (isValidLeadIdToken(tokenRef.current) || Date.now() - startedAt >= 15_000) {
+        window.clearInterval(intervalId);
+      }
+    }, 1_000);
 
     const countInteraction = () => {
       interactionCountRef.current += 1;
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncLeadIdState();
+      }
+    };
+
     window.addEventListener('pointerdown', countInteraction, { passive: true });
     window.addEventListener('keydown', countInteraction);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener('pointerdown', countInteraction);
       window.removeEventListener('keydown', countInteraction);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [syncLeadIdState]);
+  }, [pathname, syncLeadIdState]);
 
   const waitForValidToken = useEffectEvent(async (timeoutMs = 6_000) => {
     syncLeadIdState();

@@ -1,5 +1,3 @@
-'use client';
-
 type BrandMarkProps = {
   tone?: 'dark' | 'light';
   size?: 'default' | 'compact';
