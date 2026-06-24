@@ -18,9 +18,9 @@ type LegalPageShellProps = {
 };
 
 const companyDetails = [
-  'Apha Health Plan',
+  'Alpha Legal Intake',
   '+1 (202) 984-8556',
-  'hello@aphahealthplan.com',
+  'hello@alphalegalintake.com',
   '1500 N Grant St STE R, Denver, CO 80203',
 ];
 
@@ -42,7 +42,7 @@ export function LegalPageShell({
 
       <header className="sticky top-0 z-50 border-b border-white/70 bg-white/80 backdrop-blur-2xl">
         <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <Link href="/" aria-label="Apha Health Plan home" className="rounded-2xl transition hover:opacity-90">
+          <Link href="/" aria-label="Alpha Legal Intake home" className="rounded-2xl transition hover:opacity-90">
             <BrandMark />
           </Link>
           <Link
@@ -70,7 +70,7 @@ export function LegalPageShell({
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               <div className="rounded-[1.7rem] border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-[#6a828d]">Company</p>
-                <p className="mt-2 text-sm font-bold text-[#082033]">Apha Health Plan</p>
+                <p className="mt-2 text-sm font-bold text-[#082033]">Alpha Legal Intake</p>
               </div>
               <div className="rounded-[1.7rem] border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-[#6a828d]">Document</p>
@@ -174,7 +174,7 @@ export function LegalPageShell({
                   <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9ee7e3]">Questions</p>
                   <h2 className="mt-3 text-3xl font-black tracking-[-0.05em]">Need a compliance or privacy contact?</h2>
                   <p className="mt-4 max-w-2xl text-base leading-7 text-[#c6d9df]">
-                    Contact Apha Health Plan for privacy requests, accessibility needs, or questions about our Medicare consultation experience.
+                    Contact Alpha Legal Intake for privacy requests, accessibility needs, or questions about legal intake services and accident call center support.
                   </p>
                 </div>
                 <div className="grid gap-2 text-sm font-semibold text-[#edfafa]">

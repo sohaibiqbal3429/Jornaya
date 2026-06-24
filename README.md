@@ -1,11 +1,11 @@
-# Apha Health Plan Admin Panel
+# Alpha Legal Intake Admin Panel
 
 ## Required environment variables (`.env.local`)
 
 ```bash
 MONGODB_URI=your_mongodb_connection_string
-MONGODB_DB=apha-health-plan
-ADMIN_EMAIL=admin@aphahealthplan.com
+MONGODB_DB=alpha-legal-intake
+ADMIN_EMAIL=admin@alphalegalintake.com
 ADMIN_PASSWORD=your_strong_password
 AUTH_SECRET=long_random_secret_for_signing_sessions
 ```

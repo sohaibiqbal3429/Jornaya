@@ -5,7 +5,7 @@ import { Moon, Sun } from 'lucide-react';
 
 type ThemeName = 'theme-dark' | 'theme-light';
 
-const STORAGE_KEY = 'apha-theme';
+const STORAGE_KEY = 'alpha-theme';
 
 function applyTheme(theme: ThemeName) {
   const root = document.documentElement;

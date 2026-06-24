@@ -63,7 +63,7 @@ function toSubmission(doc: SubmissionDocument): Submission {
 
 async function getCollection() {
   const client = await getMongoClient();
-  const db = client.db(process.env.MONGODB_DB || 'apha-health-plan');
+  const db = client.db(process.env.MONGODB_DB || 'alpha-legal-intake');
   return db.collection<SubmissionStored>('submissions');
 }
 
