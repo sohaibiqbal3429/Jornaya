@@ -5,6 +5,10 @@ declare global {
   var __mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
+let lastConnectionFailureAt = 0;
+
+const MONGO_FAILURE_COOLDOWN_MS = 60_000;
+
 export function getMongoUri() {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
@@ -14,11 +18,24 @@ export function getMongoUri() {
 }
 
 export function getMongoClient() {
+  const now = Date.now();
+  if (lastConnectionFailureAt && now - lastConnectionFailureAt < MONGO_FAILURE_COOLDOWN_MS) {
+    throw new Error('MongoDB connection is temporarily unavailable.');
+  }
+
   const uri = getMongoUri();
 
   if (!global.__mongoClientPromise) {
-    const client = new MongoClient(uri);
-    global.__mongoClientPromise = client.connect();
+    const client = new MongoClient(uri, {
+      connectTimeoutMS: 2_500,
+      serverSelectionTimeoutMS: 2_500,
+    });
+
+    global.__mongoClientPromise = client.connect().catch((error) => {
+      lastConnectionFailureAt = Date.now();
+      global.__mongoClientPromise = undefined;
+      throw error;
+    });
   }
 
   return global.__mongoClientPromise;

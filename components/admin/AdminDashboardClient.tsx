@@ -8,6 +8,7 @@ type Submission = {
   formType: string;
   fullName: string;
   email: string;
+  phone?: string;
   company?: string;
   serviceInterest?: string;
   consent_checked: boolean;
@@ -55,18 +56,26 @@ export default function AdminDashboardClient() {
     const data = await res.json();
     setItems(data.data || []);
     setTotal(data.total || 0);
+    if (selected) {
+      const refreshedSelected = (data.data || []).find((item: Submission) => item.id === selected.id) ?? null;
+      setSelected(refreshedSelected);
+    }
     setLastUpdated(new Date().toLocaleTimeString());
     setError('');
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [query, formType, status, consentChecked, from, to]);
+
+  useEffect(() => {
     load();
-  }, [page, formType, status, consentChecked, from, to]);
+  }, [page, query, formType, status, consentChecked, from, to]);
 
   useEffect(() => {
     const id = setInterval(load, 8000);
     return () => clearInterval(id);
-  }, [page, formType, status, consentChecked, from, to]);
+  }, [page, query, formType, status, consentChecked, from, to]);
 
   useEffect(() => {
     fetch('/api/admin/me')
@@ -113,7 +122,24 @@ export default function AdminDashboardClient() {
       setError(data.error || 'Failed to update status.');
       return;
     }
-    load();
+
+    const data = await res.json().catch(() => ({}));
+    if (data.submission) {
+      setSelected(data.submission);
+    }
+    await load();
+  };
+
+  const deleteSubmission = async (id: string) => {
+    const res = await fetch(`/api/admin/submissions/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || 'Failed to delete submission.');
+      return;
+    }
+
+    setSelected(null);
+    await load();
   };
 
   const logout = async () => {
@@ -143,7 +169,7 @@ export default function AdminDashboardClient() {
         <select value={consentChecked} onChange={(e) => setConsentChecked(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2"><option value="all">consent: all</option><option value="true">true</option><option value="false">false</option></select>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2" />
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2" />
-        <button onClick={() => { setPage(1); load(); }} className="rounded bg-[#0d9488] px-3 text-white transition hover:bg-[#0f766e]">Apply</button>
+        <button onClick={() => load()} className="rounded bg-[#0d9488] px-3 text-white transition hover:bg-[#0f766e]">Refresh</button>
       </div>
 
       <div className="mb-4"><button onClick={exportCsv} className="rounded border border-slate-700 px-3 py-1">Export CSV</button></div>
@@ -182,6 +208,10 @@ export default function AdminDashboardClient() {
                 <div>{selected.email || '-'}</div>
               </div>
               <div>
+                <div className="text-xs uppercase tracking-wide text-slate-400">Phone</div>
+                <div>{selected.phone || '-'}</div>
+              </div>
+              <div>
                 <div className="text-xs uppercase tracking-wide text-slate-400">LeadiD Token</div>
                 <div className="break-all font-mono text-xs text-slate-200">{formatToken(selected.leadiD_token)}</div>
               </div>
@@ -190,7 +220,7 @@ export default function AdminDashboardClient() {
             <div className="mt-4 flex gap-2">
               <button onClick={() => updateStatus(selected.id, 'seen')} className="rounded bg-blue-600 px-3 py-1">Mark Seen</button>
               <button onClick={() => updateStatus(selected.id, 'archived')} className="rounded bg-yellow-600 px-3 py-1">Archive</button>
-              <button onClick={async () => { if (confirm('Delete this submission?')) { await fetch(`/api/admin/submissions/${selected.id}`, { method: 'DELETE' }); setSelected(null); load(); } }} className="rounded bg-red-600 px-3 py-1">Delete</button>
+              <button onClick={async () => { if (confirm('Delete this submission?')) { await deleteSubmission(selected.id); } }} className="rounded bg-red-600 px-3 py-1">Delete</button>
             </div>
           </div>
         </div>
