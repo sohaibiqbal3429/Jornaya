@@ -2,13 +2,22 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+const FORM_TYPE_LABELS: Record<string, string> = {
+  alpha_legal_intake: 'Alpha Legal Intake',
+  legal_intake_contact: 'Alpha Legal Intake (Legacy)',
+  medicare_contact: 'Medicare Contact (Legacy)',
+};
+
+function formatFormType(type: string) {
+  return FORM_TYPE_LABELS[type] || type;
+}
+
 type Submission = {
   id: string;
   createdAt: string;
   formType: string;
   fullName: string;
   email: string;
-  phone?: string;
   zipCode?: string;
   company?: string;
   serviceInterest?: string;
@@ -16,19 +25,19 @@ type Submission = {
   status: 'new' | 'seen' | 'archived';
   message?: string;
   page_url: string;
-  page_source?: string;
   consent_timestamp: string;
   leadiD_token?: string;
   original_leadiD_token?: string;
-  universal_leadid?: string;
+  verification_leadiD_token?: string;
   lead_id?: string;
   journey_identifier?: string;
-  leadid_debug?: Record<string, unknown> | null;
-  isVarified: boolean;
-  verification_status?: string;
-  verification_leadiD_token?: string;
-  verification_error?: string;
-  verification_metadata?: Record<string, unknown> | null;
+  isVarified?: boolean;
+  leadid_debug?: Record<string, unknown>;
+  verificationMeta?: {
+    verifiedAt: string;
+    workerId: string;
+    ip?: string;
+  };
 };
 
 export default function AdminDashboardClient() {
@@ -66,26 +75,18 @@ export default function AdminDashboardClient() {
     const data = await res.json();
     setItems(data.data || []);
     setTotal(data.total || 0);
-    if (selected) {
-      const refreshedSelected = (data.data || []).find((item: Submission) => item.id === selected.id) ?? null;
-      setSelected(refreshedSelected);
-    }
     setLastUpdated(new Date().toLocaleTimeString());
     setError('');
   };
 
   useEffect(() => {
-    setPage(1);
-  }, [query, formType, status, consentChecked, from, to]);
-
-  useEffect(() => {
     load();
-  }, [page, query, formType, status, consentChecked, from, to]);
+  }, [page, formType, status, consentChecked, from, to]);
 
   useEffect(() => {
     const id = setInterval(load, 8000);
     return () => clearInterval(id);
-  }, [page, query, formType, status, consentChecked, from, to]);
+  }, [page, formType, status, consentChecked, from, to]);
 
   useEffect(() => {
     fetch('/api/admin/me')
@@ -97,19 +98,23 @@ export default function AdminDashboardClient() {
   }, []);
 
   const pages = Math.max(1, Math.ceil(total / 20));
+  const getPlaybackToken = (submission: Submission) =>
+    submission.original_leadiD_token || submission.leadiD_token || '';
 
   const exportCsv = () => {
-    const header = ['Date', 'Form Type', 'Name', 'Email', 'Company', 'Service', 'Consent', 'Status', 'LeadiD Token'];
+    const header = ['Date', 'Form Type', 'Name', 'Email', 'Company', 'Service', 'Consent', 'Status', 'Playback LeadiD', 'Stored LeadiD', 'Verification LeadiD'];
     const rows = items.map((s) => [
       s.createdAt,
-      s.formType,
+      formatFormType(s.formType),
       s.fullName,
       s.email,
       s.company ?? '',
       s.serviceInterest ?? '',
       String(s.consent_checked),
       s.status,
+      getPlaybackToken(s),
       s.leadiD_token ?? '',
+      s.verification_leadiD_token ?? '',
     ]);
     const csv = [header, ...rows]
       .map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(','))
@@ -132,24 +137,7 @@ export default function AdminDashboardClient() {
       setError(data.error || 'Failed to update status.');
       return;
     }
-
-    const data = await res.json().catch(() => ({}));
-    if (data.submission) {
-      setSelected(data.submission);
-    }
-    await load();
-  };
-
-  const deleteSubmission = async (id: string) => {
-    const res = await fetch(`/api/admin/submissions/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || 'Failed to delete submission.');
-      return;
-    }
-
-    setSelected(null);
-    await load();
+    load();
   };
 
   const logout = async () => {
@@ -174,24 +162,24 @@ export default function AdminDashboardClient() {
 
       <div className="mb-4 grid gap-2 md:grid-cols-7">
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name/email/company" className="rounded border border-slate-700 bg-slate-900 p-2" />
-        <select value={formType} onChange={(e) => setFormType(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2">{formOptions.map((o) => <option key={o} value={o}>{o}</option>)}</select>
+        <select value={formType} onChange={(e) => setFormType(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2">{formOptions.map((o) => <option key={o} value={o}>{formatFormType(o)}</option>)}</select>
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2"><option value="all">all</option><option value="new">new</option><option value="seen">seen</option><option value="archived">archived</option></select>
         <select value={consentChecked} onChange={(e) => setConsentChecked(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2"><option value="all">consent: all</option><option value="true">true</option><option value="false">false</option></select>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2" />
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded border border-slate-700 bg-slate-900 p-2" />
-        <button onClick={() => load()} className="rounded bg-[#0d9488] px-3 text-white transition hover:bg-[#0f766e]">Refresh</button>
+        <button onClick={() => { setPage(1); load(); }} className="rounded bg-orange-500 px-3">Apply</button>
       </div>
 
       <div className="mb-4"><button onClick={exportCsv} className="rounded border border-slate-700 px-3 py-1">Export CSV</button></div>
 
       <div className="overflow-x-auto rounded border border-slate-800">
         <table className="w-full text-sm">
-          <thead className="bg-slate-900"><tr><th className="p-2 text-left">Date/Time</th><th className="p-2 text-left">Form Type</th><th className="p-2 text-left">Name</th><th className="p-2 text-left">Email</th><th className="p-2 text-left">Service</th><th className="p-2 text-left">LeadiD Token</th><th className="p-2 text-left">Consent</th><th className="p-2 text-left">Status</th></tr></thead>
+          <thead className="bg-slate-900"><tr><th className="p-2 text-left">Date/Time</th><th className="p-2 text-left">Form Type</th><th className="p-2 text-left">Name</th><th className="p-2 text-left">Email</th><th className="p-2 text-left">Service</th><th className="p-2 text-left">Playback Token</th><th className="p-2 text-left">Consent</th><th className="p-2 text-left">Status</th></tr></thead>
           <tbody>
             {items.map((s) => (
               <tr key={s.id} className="cursor-pointer border-t border-slate-800 hover:bg-slate-900/70" onClick={() => setSelected(s)}>
                 <td className="p-2">{new Date(s.createdAt).toLocaleString()}</td>
-                <td className="p-2">{s.formType}</td><td className="p-2">{s.fullName}</td><td className="p-2">{s.email}</td><td className="p-2">{s.serviceInterest || '-'}</td><td className="max-w-56 p-2 font-mono text-xs text-slate-300">{formatToken(s.leadiD_token)}</td><td className="p-2">{s.consent_checked ? 'Yes' : 'No'}</td><td className="p-2">{s.status}</td>
+                <td className="p-2">{formatFormType(s.formType)}</td><td className="p-2">{s.fullName}</td><td className="p-2">{s.email}</td><td className="p-2">{s.serviceInterest || '-'}</td><td className="max-w-56 p-2 font-mono text-xs text-slate-300">{formatToken(getPlaybackToken(s))}</td><td className="p-2">{s.consent_checked ? 'Yes' : 'No'}</td><td className="p-2">{s.status}</td>
               </tr>
             ))}
           </tbody>
@@ -218,19 +206,23 @@ export default function AdminDashboardClient() {
                 <div>{selected.email || '-'}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400">Phone</div>
-                <div>{selected.phone || '-'}</div>
+                <div className="text-xs uppercase tracking-wide text-slate-400">Playback Token</div>
+                <div className="break-all font-mono text-xs text-emerald-300">{formatToken(getPlaybackToken(selected))}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400">LeadiD Token</div>
-                <div className="break-all font-mono text-xs text-slate-200">{formatToken(selected.leadiD_token)}</div>
+                <div className="text-xs uppercase tracking-wide text-slate-400">Stored Original Browser Token</div>
+                <div className="break-all font-mono text-xs text-slate-200">{formatToken(selected.original_leadiD_token || selected.leadiD_token)}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-slate-400">Verification Worker Token</div>
+                <div className="break-all font-mono text-xs text-slate-200">{formatToken(selected.verification_leadiD_token)}</div>
               </div>
             </div>
             <pre className="mt-4 whitespace-pre-wrap text-xs">{JSON.stringify(selected, null, 2)}</pre>
             <div className="mt-4 flex gap-2">
               <button onClick={() => updateStatus(selected.id, 'seen')} className="rounded bg-blue-600 px-3 py-1">Mark Seen</button>
               <button onClick={() => updateStatus(selected.id, 'archived')} className="rounded bg-yellow-600 px-3 py-1">Archive</button>
-              <button onClick={async () => { if (confirm('Delete this submission?')) { await deleteSubmission(selected.id); } }} className="rounded bg-red-600 px-3 py-1">Delete</button>
+              <button onClick={async () => { if (confirm('Delete this submission?')) { await fetch(`/api/admin/submissions/${selected.id}`, { method: 'DELETE' }); setSelected(null); load(); } }} className="rounded bg-red-600 px-3 py-1">Delete</button>
             </div>
           </div>
         </div>

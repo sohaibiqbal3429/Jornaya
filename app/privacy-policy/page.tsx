@@ -1,22 +1,256 @@
-import type { Metadata } from 'next';
-import { LegalPageShell, type LegalSection } from '@/components/LegalPageShell';
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: 'Read how Alpha Legal Intake collects, uses, shares, and protects information submitted through our legal intake services website.',
+  title: "Privacy Policy | Alpha Legal Intake",
+  description: "Privacy Policy for Alpha Legal Intake.",
 };
 
-const sections: LegalSection[] = [
-  { title: 'Scope and Purpose', paragraphs: ['This Privacy Policy describes how Alpha Legal Intake collects, uses, discloses, and safeguards information when you visit our website, request intake support, communicate with our team, or interact with services made available through this platform.', 'Alpha Legal Intake operates as a legal intake, accident call center, and lead generation service provider. We are not a law firm and do not provide legal advice.', 'By using this website or submitting information to Alpha Legal Intake, you acknowledge the practices described in this Privacy Policy as of the effective date listed on this page.'] },
-  { title: 'Information We Collect', paragraphs: ['We collect information you voluntarily provide when you complete an intake request, contact form, call request, or similar experience. This may include your name, telephone number, email address, ZIP code, accident details, injury indicators, representation status, and other details you choose to provide.', 'We may also collect operational data associated with a submission, including consent records, timestamps, lead-identification tokens, page URLs, and communication preferences.'], bullets: ['Device and usage information such as browser type, IP address, referring page, pages visited, session timing, and analytics data.', 'Cookies, pixels, and similar technologies used to understand site performance, improve usability, and measure campaign effectiveness.', 'Communications you send to Alpha Legal Intake by email, phone, text, or web form, including follow-up questions and support requests.'] },
-  { title: 'How We Use Information', paragraphs: ['Alpha Legal Intake uses collected information to respond to intake requests, verify accident details, qualify potential personal injury opportunities, coordinate live transfer calls, operate the website, improve our user experience, and maintain internal records.', 'We may use your information to personalize outreach, document consent, prevent fraud, troubleshoot technical issues, comply with legal obligations, and communicate important service or policy updates.', 'Where permitted by law and based on your preferences, we may also use your information to send relevant communications about Motor Vehicle Accident leads, legal intake services, and accident call center support.'] },
-  { title: 'How Information May Be Shared', paragraphs: ['We do not sell your personal information for cash consideration. We may disclose information to participating law firms, legal marketing partners, call center partners, CRM and hosting providers, analytics vendors, and service providers that support intake workflows or website operations.', 'Information may also be disclosed when reasonably necessary to protect the rights, safety, or property of Alpha Legal Intake, our users, or others; to investigate suspected fraud or abuse; to enforce our terms; or to comply with subpoenas, court orders, legal process, or lawful requests.', 'If Alpha Legal Intake is involved in a merger, acquisition, financing, or sale of assets, information may be transferred as part of that transaction subject to appropriate confidentiality and legal safeguards.'] },
-  { title: 'Consent and Communications', paragraphs: ['When you submit an intake request, you may authorize Alpha Legal Intake and its participating legal marketing or attorney partners to contact you by phone, text message, or email regarding accident intake, personal injury lead qualification, live transfer coordination, and related legal services.', 'Your consent to receive communications is not a condition of purchase. Message and data rates may apply to text communications. You may opt out of marketing communications using the instructions provided in the communication or by contacting us directly.', 'Alpha Legal Intake is not a law firm, does not provide legal advice, and does not guarantee case acceptance or any legal outcome.'] },
-  { title: 'Cookies and Analytics', paragraphs: ['We and our service providers may use cookies, local storage, tags, and similar technologies to maintain site functionality, remember preferences, attribute marketing activity, and understand how users interact with the website.', 'Most browsers allow you to block or delete cookies. Disabling certain technologies may affect the availability or functionality of some features on the site.'] },
-  { title: 'Data Security and Retention', paragraphs: ['Alpha Legal Intake uses administrative, technical, and physical safeguards designed to protect information against unauthorized access, disclosure, alteration, or destruction.', 'No internet transmission or storage system can be guaranteed to be completely secure. We retain information for as long as reasonably necessary to provide services, document compliance, resolve disputes, enforce agreements, and satisfy legal, operational, or recordkeeping obligations.'] },
-  { title: 'Your Choices and Privacy Rights', paragraphs: ['You may choose not to provide information through our forms, but some services or response workflows may not be available without the requested details.', 'Residents of certain states may have additional rights regarding access, deletion, correction, or opt-out requests. We will review and respond to eligible requests in accordance with applicable law and may need to verify your identity before fulfilling a request.'] },
+type PolicySection = {
+  title: string;
+  paragraphs?: string[];
+  bullets?: string[];
+};
+
+const policySections: PolicySection[] = [
+  {
+    title: "Introduction",
+    paragraphs: [
+      "Welcome to Alpha Legal Intake. This Privacy Policy explains how we collect, use, disclose, and safeguard information when you visit our website, submit an intake request, or communicate with us about motor vehicle accident leads, live transfer calls, or personal injury intake support.",
+      "By using our website or submitting information through our forms, you acknowledge the practices described in this Privacy Policy.",
+    ],
+  },
+  {
+    title: "Information We Collect",
+    paragraphs: [
+      "We collect information you voluntarily provide, such as your name, phone number, email address, ZIP code, and details related to your inquiry or requested intake services.",
+      "We may also collect technical information such as IP address, browser type, device details, referring URLs, form interaction data, LeadiD verification values, and website usage information.",
+      "If you do not want to provide requested information, you should not submit the form or should discontinue the submission process.",
+    ],
+    bullets: [
+      "Contact and identification information submitted through website forms.",
+      "Consent records, timestamps, page source, and related lead verification details.",
+      "Usage data gathered through cookies, analytics tools, logs, and similar technologies.",
+    ],
+  },
+  {
+    title: "How We Use Your Information",
+    paragraphs: [
+      "We use submitted information to respond to inquiries, route intake requests, support live transfer workflows, evaluate lead quality, maintain consent and verification records, and improve our website and services.",
+      "We may use contact information to communicate with you about Alpha Legal Intake services, requested lead generation support, operational updates, and related business communications.",
+    ],
+  },
+  {
+    title: "Information Sharing and Disclosure",
+    paragraphs: [
+      "We may share information with vendors, service providers, intake partners, law firm customers, analytics providers, compliance tools, or other contractors who help us operate the website and deliver requested services.",
+      "We may disclose information when required to comply with applicable law, legal process, regulatory obligations, fraud prevention, security needs, or to protect the rights and safety of Alpha Legal Intake and others.",
+    ],
+  },
+  {
+    title: "Legal Intake Disclaimer",
+    paragraphs: [
+      "Alpha Legal Intake is not a law firm and does not provide legal advice, legal representation, or legal services.",
+      "Submitting information through this website does not create an attorney-client relationship with Alpha Legal Intake or any law firm.",
+      "Lead availability, transfer volume, and qualification results may vary based on campaign settings, geography, demand, compliance requirements, and other operational factors.",
+    ],
+  },
+  {
+    title: "Your Choices",
+    paragraphs: [
+      "You may choose not to submit information through our forms. If you have previously submitted information, you may contact us to request that we update or delete information where required by applicable law.",
+      "You may opt out of certain communications by following instructions provided in those communications or by contacting us directly.",
+    ],
+  },
+  {
+    title: "Security",
+    bullets: [
+      "We use reasonable administrative, technical, and organizational safeguards to help protect information submitted through our website.",
+      "No method of transmission or storage is completely secure, and we cannot guarantee absolute security.",
+      "Administrative access to internal systems is restricted and protected through authentication and security controls.",
+    ],
+  },
+  {
+    title: "Children's Privacy",
+    paragraphs: [
+      "Our website and services are intended for adults and business users. We do not knowingly collect personal information from children under the age of 13.",
+    ],
+  },
+  {
+    title: "Contact Us",
+    bullets: [
+      "Alpha Legal Intake",
+      "+1 (202) 984-8556",
+      "hello@alphalegalintake.com",
+      "1500 N Grant St STE R Denver, CO 80203 United States",
+    ],
+  },
 ];
 
+const sectionIcons: Record<string, string> = {
+  Introduction: "01",
+  "Information We Collect": "02",
+  "How We Use Your Information": "03",
+  "Information Sharing and Disclosure": "04",
+  "Legal Intake Disclaimer": "05",
+  "Your Choices": "06",
+  Security: "07",
+  "Children's Privacy": "08",
+  "Contact Us": "09",
+};
+
 export default function PrivacyPolicyPage() {
-  return <LegalPageShell eyebrow="Privacy and Data Use" title="Privacy Policy" intro="Alpha Legal Intake is committed to handling personal information with clarity, restraint, and a professional standard of trust for legal intake and accident lead generation workflows." effectiveDate="May 13, 2026" documentLabel="Website Privacy Policy" sections={sections} />;
+  return (
+    <main className="alpha-site min-h-screen text-slate-900">
+      <header className="sticky top-4 z-50 px-4">
+        <div className="alpha-floating-header mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link
+            href="/"
+            className="flex items-center gap-3 text-[#062032]"
+            aria-label="Alpha Legal Intake home"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#062032] text-lg font-black text-[#11c5ba]">
+              A
+            </span>
+            <span className="text-lg font-bold">Alpha Legal Intake</span>
+          </Link>
+
+          <div className="flex items-center gap-3 text-sm font-semibold">
+            <Link
+              href="/terms-of-service"
+              className="text-slate-600 transition hover:text-[#062032]"
+            >
+              Terms
+            </Link>
+            <Link href="/" className="alpha-secondary-button px-4 py-2">
+              Back Home
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <section className="alpha-soft-gradient pt-24 pb-16 sm:pb-20 lg:pb-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl">
+            <div className="alpha-eyebrow inline-flex rounded-full border border-teal-200 bg-white/70 px-4 py-2">
+              Legal Information
+            </div>
+
+            <h1 className="mt-6 text-4xl font-black tracking-tight text-[#062032] sm:text-5xl lg:text-6xl">
+              Privacy Policy
+            </h1>
+
+            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+              We value clarity, transparency, and trust. This page explains how
+              Alpha Legal Intake collects, uses, and protects information when
+              you interact with our website and legal-intake services.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="pb-20 pt-2 sm:pb-24">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-10 lg:px-8">
+          <aside className="lg:sticky lg:top-28 lg:self-start">
+            <div className="alpha-card overflow-hidden">
+              <div className="border-b border-slate-100 bg-gradient-to-r from-teal-50 to-sky-50 px-5 py-4">
+                <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-700">
+                  On this page
+                </h2>
+              </div>
+
+              <nav className="p-3">
+                <ul className="space-y-1.5">
+                  {policySections.map((section) => {
+                    const sectionId = section.title
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-");
+
+                    return (
+                      <li key={section.title}>
+                        <a
+                          href={`#${sectionId}`}
+                          className="group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-slate-600 transition hover:bg-teal-50 hover:text-[#062032]"
+                        >
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-50 text-xs font-bold text-teal-700 transition group-hover:bg-teal-100">
+                            {sectionIcons[section.title] ?? "•"}
+                          </span>
+                          <span className="font-medium leading-5">
+                            {section.title}
+                          </span>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            </div>
+          </aside>
+
+          <div className="space-y-6 sm:space-y-8">
+            {policySections.map((section, index) => {
+              const sectionId = section.title
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-");
+
+              return (
+                <section
+                  id={sectionId}
+                  key={section.title}
+                  className="alpha-rounded-card overflow-hidden"
+                >
+                  <div className="border-b border-slate-100 bg-gradient-to-r from-white via-teal-50/40 to-sky-50/60 px-6 py-5 sm:px-8 sm:py-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#062032] text-sm font-black text-teal-300">
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
+
+                      <div className="min-w-0">
+                        <h2 className="text-2xl font-black tracking-tight text-[#062032] sm:text-[30px]">
+                          {section.title}
+                        </h2>
+                        <div className="mt-2 h-1.5 w-16 rounded-full bg-teal-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-6 py-6 sm:px-8 sm:py-8">
+                    {section.paragraphs ? (
+                      <div className="space-y-5 text-[15px] leading-8 text-slate-700 sm:text-base">
+                        {section.paragraphs.map((paragraph, paragraphIndex) => (
+                          <p
+                            key={`${section.title}-paragraph-${paragraphIndex}`}
+                          >
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {section.bullets ? (
+                      <ul
+                        className={`grid gap-3 text-[15px] leading-8 text-slate-700 sm:text-base ${section.paragraphs ? "mt-6" : ""}`}
+                      >
+                        {section.bullets.map((bullet, bulletIndex) => (
+                          <li
+                            key={`${section.title}-bullet-${bulletIndex}`}
+                            className="flex items-start gap-4 rounded-2xl border border-teal-100 bg-teal-50/50 px-4 py-4"
+                          >
+                            <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-bold text-teal-700">
+                              ✓
+                            </span>
+                            <span>{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
 }

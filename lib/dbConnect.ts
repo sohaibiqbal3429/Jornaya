@@ -1,12 +1,16 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, type MongoClientOptions } from 'mongodb';
 
 declare global {
+  // eslint-disable-next-line no-var
   var __mongoClientPromise: Promise<MongoClient> | undefined;
+  // eslint-disable-next-line no-var
+  var __mongoClient: MongoClient | undefined;
 }
 
-let lastConnectionFailureAt = 0;
-
-const MONGO_FAILURE_COOLDOWN_MS = 60_000;
+const mongoClientOptions: MongoClientOptions = {
+  serverSelectionTimeoutMS: 10000,
+  connectTimeoutMS: 10000,
+};
 
 export function getMongoUri() {
   const uri = process.env.MONGODB_URI;
@@ -17,24 +21,32 @@ export function getMongoUri() {
 }
 
 export function getMongoClient() {
-  const now = Date.now();
-  if (lastConnectionFailureAt && now - lastConnectionFailureAt < MONGO_FAILURE_COOLDOWN_MS) {
-    throw new Error('MongoDB connection is temporarily unavailable.');
-  }
-
   const uri = getMongoUri();
 
-  if (!global.__mongoClientPromise) {
-    const client = new MongoClient(uri, {
-      connectTimeoutMS: 2_500,
-      serverSelectionTimeoutMS: 2_500,
-    });
+  if (global.__mongoClient) {
+    return Promise.resolve(global.__mongoClient);
+  }
 
-    global.__mongoClientPromise = client.connect().catch((error) => {
-      lastConnectionFailureAt = Date.now();
-      global.__mongoClientPromise = undefined;
-      throw error;
-    });
+  if (!global.__mongoClientPromise) {
+    const client = new MongoClient(uri, mongoClientOptions);
+    global.__mongoClientPromise = client
+      .connect()
+      .then((connectedClient) => {
+        global.__mongoClient = connectedClient;
+        return connectedClient;
+      })
+      .catch(async (error) => {
+        global.__mongoClientPromise = undefined;
+        global.__mongoClient = undefined;
+
+        try {
+          await client.close();
+        } catch {
+          // Ignore close errors after a failed connect attempt.
+        }
+
+        throw error;
+      });
   }
 
   return global.__mongoClientPromise;

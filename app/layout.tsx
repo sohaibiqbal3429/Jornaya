@@ -1,50 +1,85 @@
-import type { Metadata } from 'next'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
+import { Suspense, type ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/next";
+import { LeadIdRuntime } from "@/components/LeadIdRuntime";
+import {
+  LEADID_CANONICAL_FIELD_ID,
+  LEADID_FIELD_NAME,
+  LEADID_SCRIPT_ID,
+  LEADID_SCRIPT_SRC,
+} from "@/lib/leadid";
+import "./globals.css";
+
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://alphalegalintake.com'),
-  title: {
-    default: 'Alpha Legal Intake | Motor Vehicle Accident Leads',
-    template: '%s | Alpha Legal Intake',
+  title: "Alpha Legal Intake",
+  description:
+    "Alpha Legal Intake helps personal injury law firms grow with verified motor vehicle accident leads, live transfer calls, and professional intake support.",
+  generator: "Alpha Legal Intake",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: "/icon.svg",
   },
-  description: 'Motor Vehicle Accident leads, MVA leads, personal injury leads, live transfer leads, legal intake services, and accident call center support for law firms.',
-  applicationName: 'Alpha Legal Intake',
-  generator: 'Alpha Legal Intake',
-  keywords: [
-    'Alpha Legal Intake',
-    'Motor Vehicle Accident Leads',
-    'MVA Leads',
-    'Personal Injury Leads',
-    'Live Transfer Leads',
-    'Legal Intake Services',
-    'Accident Call Center',
-    'Accident Lead Generation',
-  ],
-  alternates: { canonical: '/' },
-  openGraph: {
-    title: 'Alpha Legal Intake | Motor Vehicle Accident Leads',
-    description: 'Verified accident leads, live transfer calls, case qualification, and legal intake support for personal injury law firms.',
-    url: 'https://alphalegalintake.com',
-    siteName: 'Alpha Legal Intake',
-    type: 'website',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Alpha Legal Intake accident lead generation and call center support' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Alpha Legal Intake | Motor Vehicle Accident Leads',
-    description: 'Verified accident leads, live transfer calls, and legal intake services for personal injury law firms.',
-    images: ['/twitter-image'],
-  },
-  manifest: '/manifest.webmanifest',
-  icons: { icon: [{ url: '/favicon.ico', sizes: 'any' }, { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' }], shortcut: '/favicon.ico', apple: '/apple-touch-icon.png' },
-}
+};
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: ReactNode;
+}>) {
   return (
-    <html lang="en" className="theme-dark">
-      <head><script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('alpha-theme');var c=document.documentElement.classList;c.remove('theme-dark','theme-light');c.add(t==='theme-light'?'theme-light':'theme-dark');}catch(e){}})();` }} /></head>
-      <body className="font-sans antialiased">{children}<Analytics /></body>
+    <html
+      lang="en"
+      className={`theme-dark ${geist.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head />
+      <body className="font-sans antialiased">
+        <input
+          id={LEADID_CANONICAL_FIELD_ID}
+          name={LEADID_FIELD_NAME}
+          type="hidden"
+          defaultValue=""
+          readOnly
+          aria-hidden="true"
+        />
+
+        <Script id="theme-loader" strategy="beforeInteractive">
+          {`
+            (function() {
+              try {
+                var t = localStorage.getItem('chs-theme');
+                var c = document.documentElement.classList;
+                c.remove('theme-dark', 'theme-light');
+                c.add(t === 'theme-light' ? 'theme-light' : 'theme-dark');
+              } catch (e) {}
+            })();
+          `}
+        </Script>
+
+        <Script
+          id={LEADID_SCRIPT_ID}
+          src={LEADID_SCRIPT_SRC}
+          strategy="beforeInteractive"
+        />
+
+        <Suspense fallback={null}>
+          <LeadIdRuntime />
+        </Suspense>
+        {children}
+        <Analytics />
+      </body>
     </html>
-  )
+  );
 }

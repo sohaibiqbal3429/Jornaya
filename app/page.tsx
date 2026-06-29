@@ -1,566 +1,824 @@
-import type { ReactNode } from 'react';
+"use client";
+
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   ArrowRight,
-  BadgeCheck,
-  BriefcaseBusiness,
-  CalendarCheck,
-  Check,
-  ChevronDown,
-  FileCheck2,
-  Headset,
+  CheckCircle2,
   Mail,
   MapPin,
   Phone,
-  PhoneCall,
   Scale,
   ShieldCheck,
-  Sparkles,
-  UserCheck,
-} from 'lucide-react';
-import Link from 'next/link';
-import { BrandMark } from '@/components/BrandMark';
-import { HomeLeadForm } from '@/components/home/HomeLeadForm';
-import { HomeHeader } from '@/components/home/HomeHeader';
-import { LeadIdProvider } from '@/components/leadid/LeadIdProvider';
+  Star,
+} from "lucide-react";
+import Link from "next/link";
+import { PremiumSubmissionAlert } from "@/components/PremiumSubmissionAlert";
+import {
+  buildLeadIdSubmissionSnapshot,
+  getCanonicalLeadIdInput,
+  getLeadIdDebugState,
+  leadIdLog,
+  markLeadIdSubmission,
+  readCurrentLeadIdToken,
+  waitForValidLeadIdToken,
+} from "@/lib/leadid-browser";
+import {
+  isValidLeadiDToken,
+  LEADID_FIELD_NAME,
+  LEADID_FORM_FIELD_ID,
+} from "@/lib/leadid";
 
-const navItems = [
-  { label: 'Services', href: '#services' },
-  { label: 'Why Alpha', href: '#why-alpha' },
-  { label: 'Process', href: '#process' },
-  { label: 'FAQ', href: '#faq' },
-];
+type FormData = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  zipCode: string;
+  email: string;
+};
 
-const serviceFeatures = [
-  {
-    eyebrow: 'MVA lead generation',
-    title: 'Motor Vehicle Accident Leads',
-    copy: 'Connect your legal team with verified accident prospects who are actively seeking guidance after a collision.',
-    icon: Scale,
-    points: ['MVA lead sourcing', 'Accident details captured', 'Attorney-ready handoff'],
-  },
-  {
-    eyebrow: 'Live call routing',
-    title: 'Live Transfer Calls',
-    copy: 'Alpha Legal Intake routes qualified callers to personal injury firms while intent is high and details are fresh.',
-    icon: PhoneCall,
-    points: ['Warm caller introduction', 'Real-time transfer workflow', 'Call center quality controls'],
-  },
-  {
-    eyebrow: 'Professional intake',
-    title: 'Personal Injury Intake',
-    copy: 'Trained legal intake agents gather contact information, accident facts, injury context, and representation status.',
-    icon: Headset,
-    points: ['Scripted intake support', 'Bilingual-ready workflows', 'Lead notes for follow-up'],
-  },
-];
+type FormFieldName = keyof FormData;
 
-const trustPillars = [
+type SubmissionAlertState = {
+  open: boolean;
+  title: string;
+  message: string;
+  variant: "success" | "error";
+};
+
+const initialFormData: FormData = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  zipCode: "",
+  email: "",
+};
+
+const requiredFields = [
+  { name: "firstName", label: "First Name" },
+  { name: "lastName", label: "Last Name" },
+  { name: "phone", label: "Phone Number" },
+  { name: "zipCode", label: "Zip Code" },
+] as const satisfies ReadonlyArray<{
+  name: Exclude<FormFieldName, "email">;
+  label: string;
+}>;
+
+const fullConsentText = `By checking this box and submitting this form, I consent to be contacted by Alpha Legal Intake and its law firm or intake partners by phone, email, text message, or prerecorded/artificial voice at the number and email I provided, including through automated dialing technology, about motor vehicle accident and personal injury legal intake services. I understand my consent is not required to purchase services, message and data rates may apply, and I can opt out at any time. I certify that the information submitted is accurate and that I am at least 18 years old.`;
+
+const services = [
   {
-    title: 'Accident verification',
-    copy: 'Our intake workflow confirms core collision details, caller intent, location, and immediate follow-up needs before routing.',
-    icon: BadgeCheck,
+    title: "MVA Lead Generation",
+    description:
+      "Connect with claimants who are actively seeking help after motor vehicle accidents.",
   },
   {
-    title: 'Case qualification',
-    copy: 'Qualification questions help legal teams prioritize viable personal injury opportunities and reduce wasted callbacks.',
-    icon: UserCheck,
+    title: "Live Transfer Calls",
+    description:
+      "Receive warm, real-time calls from screened prospects ready to discuss their accident details.",
   },
   {
-    title: 'Attorney-focused support',
-    copy: 'Every conversation is built around the information personal injury firms need to evaluate potential claims quickly.',
-    icon: BriefcaseBusiness,
-  },
-  {
-    title: 'Speed when calls matter',
-    copy: 'Fast response, live transfer options, and organized notes help firms move while the prospective client is ready to talk.',
-    icon: CalendarCheck,
+    title: "Personal Injury Intake",
+    description:
+      "Use a compliant intake flow that captures key case details for fast law firm review.",
   },
 ];
 
 const processSteps = [
-  {
-    step: '01',
-    title: 'Capture the inquiry',
-    copy: 'Alpha Legal Intake receives inbound interest, lead form details, or campaign calls from people reporting accident-related needs.',
-  },
-  {
-    step: '02',
-    title: 'Verify accident details',
-    copy: 'Our agents document collision date, location, injury indicators, treatment status, fault concerns, and contact information.',
-  },
-  {
-    step: '03',
-    title: 'Qualify the opportunity',
-    copy: 'We apply firm-specific intake criteria so attorneys and marketing teams receive clearer, better-organized prospects.',
-  },
-  {
-    step: '04',
-    title: 'Transfer or deliver',
-    copy: 'Qualified callers can be live-transferred to your team, while completed intake records can be delivered for rapid follow-up.',
-  },
-];
-
-const testimonials = [
-  {
-    quote: 'Alpha Legal Intake improved our MVA campaign response quality and gave our intake team cleaner notes before each callback.',
-    name: 'Jordan M.',
-    detail: 'Managing Partner, injury firm',
-  },
-  {
-    quote: 'The live transfer process feels professional. Our team speaks with accident callers while they are still engaged.',
-    name: 'Priya S.',
-    detail: 'Legal marketing director',
-  },
-  {
-    quote: 'Their agents understand personal injury intake, ask practical questions, and help us identify cases worth immediate review.',
-    name: 'Marcus T.',
-    detail: 'Intake operations lead',
-  },
+  "Submit your intake request and campaign goals.",
+  "We verify contact details, location, and accident interest.",
+  "Qualified prospects are routed to your intake team or call center.",
+  "Your firm reviews case fit and follows up with confidence.",
 ];
 
 const faqs = [
   {
-    question: 'What does Alpha Legal Intake do?',
+    question: "What types of cases does Alpha Legal Intake support?",
     answer:
-      'Alpha Legal Intake provides Motor Vehicle Accident leads, live transfer calls, accident verification, case qualification, and call center support for personal injury law firms.',
+      "We focus on motor vehicle accident and personal injury intake opportunities for law firms and legal marketers.",
   },
   {
-    question: 'Are you a law firm?',
+    question: "Can leads be delivered as live transfers?",
     answer:
-      'No. Alpha Legal Intake is a legal intake and lead generation service provider. We do not provide legal advice, represent callers, or make attorney-client relationship decisions.',
+      "Yes. Alpha Legal Intake can support live transfer workflows so your intake team can speak with interested prospects quickly.",
   },
   {
-    question: 'What happens after a form is submitted?',
+    question: "Is consent captured on the intake form?",
     answer:
-      'We securely record the request and may contact the submitter by phone, text, or email to verify accident details, complete intake, or coordinate a live transfer to a participating legal team.',
-  },
-  {
-    question: 'Can campaigns use custom qualification criteria?',
-    answer:
-      'Yes. Intake flows can be aligned around geography, accident type, injury indicators, representation status, and other firm-approved qualification requirements.',
+      "Yes. The homepage form keeps the existing LeadiD verification flow and records the displayed legal-intake consent language.",
   },
 ];
 
-const fullConsentText = `By clicking "Send my intake request" or calling the number listed on this page, you agree that Alpha Legal Intake and its participating legal marketing or attorney partners may contact you by phone, text message, or email at the contact information you provide, including through automated technology where permitted by law, about motor vehicle accident intake, personal injury lead qualification, live transfer coordination, and related legal services. Your consent is not a condition of purchase. Message and data rates may apply. You may revoke consent at any time. Alpha Legal Intake is not a law firm, does not provide legal advice, and does not guarantee case acceptance or any legal outcome.`;
-
-const consentTextVersion = 'alpha-legal-v1.0';
-
-const structuredData = JSON.stringify({
-  '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'Organization',
-      name: 'Alpha Legal Intake',
-      url: 'https://alphalegalintake.com',
-      telephone: '+1-202-984-8556',
-      email: 'hello@alphalegalintake.com',
-      address: {
-        '@type': 'PostalAddress',
-        streetAddress: '1500 N Grant St STE R',
-        addressLocality: 'Denver',
-        addressRegion: 'CO',
-        postalCode: '80203',
-        addressCountry: 'US',
-      },
-    },
-    {
-      '@type': 'WebSite',
-      name: 'Alpha Legal Intake',
-      url: 'https://alphalegalintake.com',
-    },
-    {
-      '@type': 'FAQPage',
-      mainEntity: faqs.map((faq) => ({
-        '@type': 'Question',
-        name: faq.question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: faq.answer,
-        },
-      })),
-    },
-  ],
-});
-
-function SectionIntro({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
+function ContactDetails({
+  className = "",
+  iconClassName = "h-5 w-5",
+  textClassName = "text-sm text-slate-700",
+}: {
+  className?: string;
+  iconClassName?: string;
+  textClassName?: string;
+}) {
   return (
-    <div className="mx-auto max-w-3xl text-center">
-      <p className="text-sm font-bold uppercase tracking-[0.28em] text-[#128a8f]">{eyebrow}</p>
-      <h2 className="mt-4 text-3xl font-black tracking-[-0.055em] text-[#082033] sm:text-5xl">{title}</h2>
-      <p className="mt-5 text-lg leading-8 text-[#5e7280]">{copy}</p>
+    <div className={className}>
+      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-teal-600">
+        Alpha Legal Intake
+      </p>
+      <div className={`space-y-3 ${textClassName}`}>
+        <p className="flex items-center gap-3">
+          <Phone className={`${iconClassName} shrink-0 text-teal-600`} />
+          <span>+1 (202) 984-8556</span>
+        </p>
+        <p className="flex items-center gap-3">
+          <Mail className={`${iconClassName} shrink-0 text-teal-600`} />
+          <span>hello@alphalegalintake.com</span>
+        </p>
+        <p className="flex items-start gap-3">
+          <MapPin
+            className={`${iconClassName} mt-0.5 shrink-0 text-teal-600`}
+          />
+          <span>1500 N Grant St STE R Denver, CO 80203 United States</span>
+        </p>
+      </div>
     </div>
   );
 }
 
-function AnimatedPanel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`alpha-rise ${className}`}>{children}</div>;
-}
-
 export default function Home() {
+  const consentTextVersion = "legal-intake-v1.0";
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consentError, setConsentError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [leadIdReady, setLeadIdReady] = useState(false);
+  const [leadIdStatusMessage, setLeadIdStatusMessage] = useState(
+    "Initializing secure lead verification…",
+  );
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<FormFieldName, string>>
+  >({});
+  const [submissionAlert, setSubmissionAlert] = useState<SubmissionAlertState>({
+    open: false,
+    title: "",
+    message: "",
+    variant: "success",
+  });
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const updateLeadIdStatus = () => {
+      const token = readCurrentLeadIdToken();
+      const ready = isValidLeadiDToken(token);
+
+      if (cancelled) {
+        return;
+      }
+
+      setLeadIdReady(ready);
+
+      if (ready) {
+        setLeadIdStatusMessage("Secure lead verification ready.");
+        return;
+      }
+
+      const state = getLeadIdDebugState();
+      const elapsedMs =
+        Date.now() - new Date(state.session.pageLoadedAt).getTime();
+      if (elapsedMs > 10_000) {
+        setLeadIdStatusMessage(
+          "Lead verification token is still missing. Disable ad blockers or browser tracking protection, then reload the page.",
+        );
+        return;
+      }
+
+      setLeadIdStatusMessage("Initializing secure lead verification…");
+    };
+
+    updateLeadIdStatus();
+    const intervalId = window.setInterval(updateLeadIdStatus, 500);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+
+    if (!Object.prototype.hasOwnProperty.call(formData, name)) {
+      return;
+    }
+
+    const fieldName = name as FormFieldName;
+
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    setFieldErrors((prev) => {
+      if (!prev[fieldName]) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      if (value.trim()) {
+        delete next[fieldName];
+      }
+      return next;
+    });
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    const nextFieldErrors = requiredFields.reduce<
+      Partial<Record<FormFieldName, string>>
+    >((errors, field) => {
+      if (!formData[field.name].trim()) {
+        errors[field.name] = `${field.label} is required.`;
+      }
+      return errors;
+    }, {});
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setSubmissionAlert({
+        open: true,
+        title: "Complete Required Fields",
+        message:
+          "Please fill in First Name, Last Name, Phone Number, and Zip Code before submitting the form.",
+        variant: "error",
+      });
+      return;
+    }
+
+    setFieldErrors({});
+
+    if (!consentChecked) {
+      setConsentError("Consent is required before submitting this form.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const leadiDToken = await waitForValidLeadIdToken();
+
+    if (!leadiDToken) {
+      setSubmissionAlert({
+        open: true,
+        title: "Lead ID Missing",
+        message:
+          "The LeadiD token was not generated. Please refresh the page and try again.",
+        variant: "error",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    leadIdLog("submit using token", { token: leadiDToken });
+    markLeadIdSubmission(leadiDToken);
+
+    const payload = {
+      formType: "alpha_legal_intake",
+      fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+      email: formData.email,
+      phone: formData.phone,
+      zipCode: formData.zipCode,
+      serviceInterest: "Motor Vehicle Accident Leads",
+      message: "",
+      consent_checked: true,
+      consent_timestamp: new Date().toISOString(),
+      consent_text_version: consentTextVersion,
+      leadid_token: leadiDToken,
+      page_url: window.location.href,
+      page_source: "alpha legal intake landing form",
+      leadid_debug: buildLeadIdSubmissionSnapshot(),
+    };
+
+    try {
+      const response = await fetch("/api/forms/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit");
+      }
+
+      setSubmissionAlert({
+        open: true,
+        title: "Request Submitted",
+        message: "Thank you. Alpha Legal Intake will contact you soon.",
+        variant: "success",
+      });
+
+      setFormData(initialFormData);
+      setConsentChecked(false);
+      setConsentError("");
+      const canonicalInput = getCanonicalLeadIdInput();
+      if (canonicalInput) {
+        canonicalInput.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    } catch {
+      setSubmissionAlert({
+        open: true,
+        title: "Submission Failed",
+        message:
+          "We could not submit your request right now. Please try again shortly.",
+        variant: "error",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen overflow-hidden bg-[#f6fafb] text-[#082033] selection:bg-[#9ee7e3] selection:text-[#062a3c]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
+    <div className="alpha-site min-h-screen pt-20">
+      <PremiumSubmissionAlert
+        open={submissionAlert.open}
+        title={submissionAlert.title}
+        message={submissionAlert.message}
+        variant={submissionAlert.variant}
+        onClose={() => setSubmissionAlert((prev) => ({ ...prev, open: false }))}
+      />
 
-      <div className="pointer-events-none fixed inset-0 z-0 opacity-70">
-        <div className="absolute -left-32 top-20 h-80 w-80 rounded-full bg-[#90f0e3]/40 blur-3xl" />
-        <div className="absolute right-[-12rem] top-56 h-[34rem] w-[34rem] rounded-full bg-[#b8d7ff]/40 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-[#d9f99d]/25 blur-3xl" />
-      </div>
+      <nav className="fixed inset-x-0 top-4 z-50 px-4">
+        <div className="alpha-floating-header mx-auto flex min-h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link
+            href="/"
+            className="flex items-center gap-3 text-slate-900"
+            aria-label="Alpha Legal Intake home"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#062032] text-[#11c5ba]">
+              <Scale className="h-5 w-5" />
+            </span>
+            <span className="text-lg font-bold">Alpha Legal Intake</span>
+          </Link>
 
-      <HomeHeader navItems={navItems} />
-
-      <main className="relative z-10">
-        <section className="relative px-4 pb-20 pt-36 sm:px-6 lg:px-8 lg:pb-28 lg:pt-44">
-          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.02fr_0.98fr]">
-            <AnimatedPanel className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#bfe8e6] bg-white/75 px-4 py-2 text-sm font-bold text-[#0b6f75] shadow-sm backdrop-blur">
-                <Sparkles className="h-4 w-4 text-[#13a8a3]" /> Premium accident intake for law firms
-              </div>
-              <h1 className="mt-8 text-5xl font-black leading-[0.95] tracking-[-0.075em] text-[#082033] sm:text-6xl lg:text-7xl">
-                Qualified Motor Vehicle Accident Leads for Law Firms
-              </h1>
-              <p className="mt-7 max-w-2xl text-xl leading-9 text-[#5e7280]">
-                Alpha Legal Intake helps personal injury attorneys and legal marketing teams grow with verified accident leads, live transfers, and professional intake support.
-              </p>
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <a
-                  href="#consultation"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#062a3c] px-7 py-4 text-base font-bold text-white shadow-[0_22px_42px_rgba(6,42,60,0.22)] transition hover:-translate-y-1 hover:bg-[#0b3b53]"
-                >
-                  Request MVA leads <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
-                </a>
-                <a
-                  href="#process"
-                  className="inline-flex items-center justify-center rounded-full border border-[#cfe4e8] bg-white/80 px-7 py-4 text-base font-bold text-[#0a5962] shadow-sm backdrop-blur transition hover:-translate-y-1 hover:border-[#8fd4d1] hover:bg-white"
-                >
-                  See how Alpha works
-                </a>
-              </div>
-              <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
-                {[
-                  ['Verified', 'accident leads'],
-                  ['Live transfer', 'call routing'],
-                  ['Legal intake', 'support'],
-                ].map(([top, bottom]) => (
-                  <div key={top} className="rounded-3xl border border-white/80 bg-white/70 p-4 shadow-sm backdrop-blur">
-                    <p className="text-lg font-black tracking-[-0.04em] text-[#082033]">{top}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#6a828d]">{bottom}</p>
-                  </div>
-                ))}
-              </div>
-            </AnimatedPanel>
-
-            <AnimatedPanel className="relative min-h-[620px] lg:min-h-[680px]">
-              <div className="absolute inset-x-8 top-10 h-[34rem] rounded-[3.5rem] bg-gradient-to-br from-[#d7fffb] via-white to-[#dbeafe] shadow-[0_40px_120px_rgba(8,32,51,0.14)]" />
-              <div className="absolute right-4 top-0 h-40 w-40 rounded-full bg-[#56d5cd]/30 blur-2xl" />
-              <div className="absolute left-2 top-20 z-10 rounded-[2rem] border border-white/80 bg-white/80 p-4 shadow-[0_28px_70px_rgba(8,32,51,0.12)] backdrop-blur-xl">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#e7fbf7] text-[#0c8c87]">
-                    <ShieldCheck className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-[#082033]">Intake confidence</p>
-                    <p className="text-xs font-semibold text-[#6a828d]">Guided by clear priorities</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute left-1/2 top-16 z-20 w-[88%] -translate-x-1/2 rounded-[2.2rem] border border-white/90 bg-white/90 p-5 shadow-[0_35px_90px_rgba(8,32,51,0.16)] backdrop-blur-2xl sm:w-[76%]">
-                <div className="rounded-[1.6rem] bg-[#062a3c] p-5 text-white">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#9ee7e3]">Alpha Intake Desk</p>
-                      <h3 className="mt-3 text-2xl font-black tracking-[-0.05em]">Accident lead snapshot</h3>
-                    </div>
-                    <div className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold">Live review</div>
-                  </div>
-                  <div className="mt-7 grid gap-3">
-                    {[
-                      ['Accident verified', '92%'],
-                      ['Injury indicators', 'In review'],
-                      ['Transfer readiness', 'Ready check'],
-                    ].map(([label, value], index) => (
-                      <div key={label} className="rounded-2xl bg-white/10 p-4">
-                        <div className="flex items-center justify-between gap-3 text-sm">
-                          <span className="font-semibold text-white/80">{label}</span>
-                          <span className="font-black">{value}</span>
-                        </div>
-                        <div className="mt-3 h-2 rounded-full bg-white/10">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-[#5eead4] to-[#bfdbfe]"
-                            style={{ width: `${index === 0 ? 92 : index === 1 ? 63 : 78}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div className="rounded-[1.5rem] border border-[#e1eef0] bg-[#f7fcfc] p-4">
-                    <FileCheck2 className="h-5 w-5 text-[#0d9488]" />
-                    <p className="mt-4 text-2xl font-black tracking-[-0.05em]">6</p>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6a828d]">Core services</p>
-                  </div>
-                  <div className="rounded-[1.5rem] border border-[#e1eef0] bg-[#f7fcfc] p-4">
-                    <Headset className="h-5 w-5 text-[#0d9488]" />
-                    <p className="mt-4 text-2xl font-black tracking-[-0.05em]">24/7</p>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6a828d]">Call support</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-16 right-0 z-30 w-72 rounded-[2rem] border border-white/90 bg-white/85 p-5 shadow-[0_28px_80px_rgba(8,32,51,0.14)] backdrop-blur-xl">
-                <div className="flex items-center -space-x-3">
-                  {['MA', 'DR', 'ET'].map((initials, index) => (
-                    <div
-                      key={initials}
-                      className="grid h-11 w-11 place-items-center rounded-full border-2 border-white bg-[#dff8f4] text-xs font-black text-[#0a5962]"
-                      style={{ backgroundColor: index === 1 ? '#e7f0ff' : index === 2 ? '#f0fdf4' : undefined }}
-                    >
-                      {initials}
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-4 text-sm font-bold leading-6 text-[#082033]">
-                  Legal teams use Alpha to organize accident calls, verify details, and move qualified prospects into attorney review.
-                </p>
-              </div>
-            </AnimatedPanel>
+          <div className="hidden items-center gap-8 md:flex">
+            <a
+              href="#services"
+              className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
+            >
+              Services
+            </a>
+            <a
+              href="#why-alpha"
+              className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
+            >
+              Why Alpha
+            </a>
+            <a
+              href="#process"
+              className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
+            >
+              Process
+            </a>
+            <a
+              href="#faq"
+              className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
+            >
+              FAQ
+            </a>
+            <a
+              href="#contact"
+              className="alpha-primary-button px-5 py-2 text-sm font-bold"
+            >
+              Request MVA leads
+            </a>
           </div>
-        </section>
 
-        <section id="services" className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <SectionIntro
-              eyebrow="Legal intake services"
-              title="A premium intake engine for personal injury growth."
-              copy="Alpha Legal Intake combines accident lead generation, call center discipline, and structured qualification for personal injury law firms."
-            />
+          <button
+            type="button"
+            className="rounded-md border border-stone-300 px-3 py-2 text-sm md:hidden"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            aria-label="Toggle navigation"
+          >
+            Menu
+          </button>
+        </div>
 
-            <div className="mt-14 grid gap-6 lg:grid-cols-3">
-              {serviceFeatures.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <AnimatedPanel
-                    key={feature.title}
-                    className={`group rounded-[2.4rem] border border-white/80 bg-white/80 p-7 shadow-[0_24px_70px_rgba(8,32,51,0.08)] backdrop-blur-xl transition duration-500 hover:-translate-y-2 hover:shadow-[0_34px_90px_rgba(8,32,51,0.13)] ${
-                      index === 1 ? 'lg:mt-10' : ''
-                    }`}
+        {mobileMenuOpen ? (
+          <div className="mx-auto mt-2 max-w-7xl rounded-3xl border border-sky-100 bg-white/95 px-4 py-3 shadow-lg md:hidden">
+            <div className="flex flex-col gap-3">
+              {["services", "why-alpha", "process", "faq", "contact"].map(
+                (item) => (
+                  <a
+                    key={item}
+                    href={`#${item}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm capitalize text-slate-700"
                   >
-                    <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#e5fbf8] text-[#0d9488] transition group-hover:scale-110">
-                      <Icon className="h-7 w-7" />
-                    </div>
-                    <p className="mt-8 text-xs font-black uppercase tracking-[0.22em] text-[#128a8f]">{feature.eyebrow}</p>
-                    <h3 className="mt-3 text-2xl font-black tracking-[-0.05em] text-[#082033]">{feature.title}</h3>
-                    <p className="mt-4 leading-7 text-[#5e7280]">{feature.copy}</p>
-                    <div className="mt-7 space-y-3">
-                      {feature.points.map((point) => (
-                        <div key={point} className="flex items-center gap-3 text-sm font-bold text-[#31515e]">
-                          <span className="grid h-6 w-6 place-items-center rounded-full bg-[#effaf9] text-[#0d9488]">
-                            <Check className="h-4 w-4" />
-                          </span>
-                          {point}
-                        </div>
-                      ))}
-                    </div>
-                  </AnimatedPanel>
-                );
-              })}
+                    {item.replace("-", " ")}
+                  </a>
+                ),
+              )}
             </div>
           </div>
-        </section>
+        ) : null}
+      </nav>
 
-        <section id="why-alpha" className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-10 rounded-[3rem] border border-white/80 bg-[#062a3c] p-6 shadow-[0_38px_100px_rgba(6,42,60,0.22)] sm:p-10 lg:grid-cols-[0.82fr_1.18fr] lg:p-14">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.28em] text-[#6ee7dd]">Why Alpha</p>
-              <h2 className="mt-5 text-4xl font-black tracking-[-0.06em] text-white sm:text-5xl">Legal intake that feels premium, precise, and fast.</h2>
-              <p className="mt-6 text-lg leading-8 text-[#c6d9df]">
-                Alpha Legal Intake is built for personal injury firms that need responsive call handling, verified accident facts, and dependable lead delivery.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {trustPillars.map((pillar) => {
-                const Icon = pillar.icon;
-                return (
-                  <div key={pillar.title} className="rounded-[2rem] border border-white/10 bg-white/[0.07] p-6 backdrop-blur transition hover:-translate-y-1 hover:bg-white/[0.1]">
-                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-[#6ee7dd]">
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <h3 className="mt-6 text-xl font-black tracking-[-0.04em] text-white">{pillar.title}</h3>
-                    <p className="mt-3 leading-7 text-[#c6d9df]">{pillar.copy}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section id="process" className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <SectionIntro
-              eyebrow="The Alpha flow"
-              title="Four clear steps from accident inquiry to attorney-ready handoff."
-              copy="Our workflow keeps each call structured while capturing the details your team needs for fast case review."
-            />
-            <div className="relative mt-16 grid gap-5 lg:grid-cols-4">
-              <div className="absolute left-0 right-0 top-10 hidden h-px bg-gradient-to-r from-transparent via-[#9cdad8] to-transparent lg:block" />
-              {processSteps.map((item) => (
-                <div key={item.step} className="relative rounded-[2.1rem] border border-[#dcebed] bg-white/85 p-6 shadow-[0_18px_55px_rgba(8,32,51,0.07)] backdrop-blur">
-                  <div className="grid h-20 w-20 place-items-center rounded-[1.7rem] bg-gradient-to-br from-[#e4fbf8] to-[#eef5ff] text-2xl font-black tracking-[-0.06em] text-[#0a5962] shadow-sm">
-                    {item.step}
-                  </div>
-                  <h3 className="mt-7 text-xl font-black tracking-[-0.04em] text-[#082033]">{item.title}</h3>
-                  <p className="mt-3 leading-7 text-[#5e7280]">{item.copy}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <SectionIntro
-              eyebrow="Client perspective"
-              title="Built for firms that need better accident lead conversations."
-              copy="Every detail is shaped to feel professional, responsive, and useful for attorneys, marketing teams, and intake managers."
-            />
-            <div className="mt-14 grid gap-6 lg:grid-cols-3">
-              {testimonials.map((testimonial) => (
-                <div key={testimonial.name} className="rounded-[2.3rem] border border-white/80 bg-white/85 p-7 shadow-[0_24px_70px_rgba(8,32,51,0.08)] backdrop-blur">
-                  <div className="flex gap-1 text-[#0d9488]">
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <Sparkles key={index} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
-                  <p className="mt-7 text-lg leading-8 text-[#254653]">&ldquo;{testimonial.quote}&rdquo;</p>
-                  <div className="mt-8 flex items-center gap-4">
-                    <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-[#dff8f4] to-[#e7f0ff] text-sm font-black text-[#0a5962]">
-                      {testimonial.name
-                        .split(' ')
-                        .map((part) => part[0])
-                        .join('')}
-                    </div>
-                    <div>
-                      <p className="font-black text-[#082033]">{testimonial.name}</p>
-                      <p className="text-sm font-semibold text-[#6a828d]">{testimonial.detail}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="consultation" className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.92fr_1.08fr]">
-            <div className="rounded-[3rem] bg-gradient-to-br from-[#062a3c] via-[#0a3a4e] to-[#0f766e] p-8 text-white shadow-[0_38px_100px_rgba(6,42,60,0.22)] sm:p-10">
-              <p className="text-sm font-bold uppercase tracking-[0.28em] text-[#9ee7e3]">Private support</p>
-              <h2 className="mt-5 text-4xl font-black tracking-[-0.06em] sm:text-5xl">Ready for stronger accident intake?</h2>
-              <p className="mt-6 text-lg leading-8 text-[#d8eef0]">
-                Share a few details and our team can discuss MVA leads, personal injury intake, live transfers, and call center support for your firm.
-              </p>
-              <div className="mt-10 space-y-4">
-                {['Motor Vehicle Accident leads', 'Live transfer calls for injury firms', 'Accident verification and case qualification'].map((item) => (
-                  <div key={item} className="flex items-center gap-3 rounded-2xl bg-white/10 p-4 text-sm font-bold text-white backdrop-blur">
-                    <Check className="h-5 w-5 text-[#9ee7e3]" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-10 rounded-[2rem] border border-white/15 bg-white/10 p-6 backdrop-blur">
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#9ee7e3]">Contact</p>
-                <div className="mt-5 space-y-4 text-[#edfafa]">
-                  <p className="flex items-center gap-3"><Phone className="h-5 w-5 text-[#9ee7e3]" /> +1 (202) 984-8556</p>
-                  <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-[#9ee7e3]" /> hello@alphalegalintake.com</p>
-                  <p className="flex items-start gap-3"><MapPin className="mt-0.5 h-5 w-5 text-[#9ee7e3]" /> 1500 N Grant St STE R Denver, CO 80203 United States</p>
-                </div>
-              </div>
-            </div>
-
-            <LeadIdProvider>
-              <HomeLeadForm consentText={fullConsentText} consentTextVersion={consentTextVersion} />
-            </LeadIdProvider>
-          </div>
-        </section>
-
-        <section id="faq" className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl">
-            <SectionIntro
-              eyebrow="Questions"
-              title="Helpful answers before you begin."
-              copy="Alpha keeps accident intake straightforward, professional, and grounded in the qualification details that matter to legal teams."
-            />
-            <div className="mt-12 space-y-4">
-              {faqs.map((faq) => (
-                <details key={faq.question} className="group rounded-[1.7rem] border border-[#dcebed] bg-white/85 p-6 shadow-sm backdrop-blur">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-black tracking-[-0.03em] text-[#082033]">
-                    {faq.question}
-                    <ChevronDown className="h-5 w-5 shrink-0 text-[#0d9488] transition group-open:rotate-180" />
-                  </summary>
-                  <p className="mt-4 leading-7 text-[#5e7280]">{faq.answer}</p>
-                </details>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl overflow-hidden rounded-[3rem] bg-[#082033] p-8 shadow-[0_38px_100px_rgba(6,42,60,0.22)] sm:p-12 lg:p-16">
-            <div className="grid items-center gap-10 lg:grid-cols-[1fr_auto]">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.28em] text-[#6ee7dd]">A stronger intake pipeline</p>
-                <h2 className="mt-5 max-w-3xl text-4xl font-black tracking-[-0.06em] text-white sm:text-5xl">Build your accident lead pipeline with confidence.</h2>
-                <p className="mt-5 max-w-2xl text-lg leading-8 text-[#c6d9df]">
-                  Request a consultation and move forward with verified MVA leads, live transfers, and intake support organized around your firm&apos;s criteria.
-                </p>
-              </div>
+      <section className="alpha-soft-gradient py-20 md:py-28">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+          <div className="space-y-7">
+            <p className="alpha-eyebrow inline-flex rounded-full border border-teal-200 bg-white/70 px-4 py-2">
+              Alpha Legal Intake
+            </p>
+            <h1 className="max-w-4xl text-4xl font-black leading-tight text-[#062032] md:text-6xl">
+              Qualified Motor Vehicle Accident Leads for Law Firms
+            </h1>
+            <p className="max-w-2xl text-lg leading-8 text-slate-600">
+              Grow your personal injury practice with screened MVA inquiries,
+              consent-based intake, and fast routing to your legal team.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
               <a
-                href="#consultation"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-4 text-base font-black text-[#082033] shadow-[0_24px_60px_rgba(255,255,255,0.12)] transition hover:-translate-y-1 hover:bg-[#e9fffc]"
+                href="#contact"
+                className="alpha-primary-button inline-flex items-center justify-center gap-2 px-7 py-3 font-bold"
               >
-                Open the intake form <ArrowRight className="h-5 w-5" />
+                Request MVA leads <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href="tel:+12029848556"
+                className="alpha-secondary-button inline-flex items-center justify-center px-7 py-3 font-semibold"
+              >
+                Call +1 (202) 984-8556
               </a>
             </div>
           </div>
-        </section>
-      </main>
-
-      <footer className="relative z-10 border-t border-[#dcebed] bg-white/75 px-4 py-14 backdrop-blur sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
-            <div>
-              <BrandMark />
-              <p className="mt-6 max-w-md leading-7 text-[#5e7280]">
-                Alpha Legal Intake helps personal injury law firms grow with Motor Vehicle Accident leads, live transfer calls, accident verification, case qualification, and legal call center support.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-[#128a8f]">Explore</p>
-              <div className="mt-5 grid gap-3 text-sm font-semibold text-[#526b78]">
-                {navItems.map((item) => (
-                  <a key={item.href} href={item.href} className="hover:text-[#082033]">{item.label}</a>
+          <div className="alpha-card p-6">
+            <div className="rounded-[1.5rem] bg-white p-6 text-slate-950">
+              <p className="alpha-eyebrow">Intake snapshot</p>
+              <h2 className="mt-3 text-2xl font-black">
+                Personal injury demand, routed with clarity.
+              </h2>
+              <div className="mt-6 space-y-4">
+                {[
+                  "Accident-focused prospects",
+                  "Live transfer-ready workflows",
+                  "Consent and LeadiD verification retained",
+                ].map((item) => (
+                  <p
+                    key={item}
+                    className="flex items-center gap-3 rounded-xl bg-stone-100 p-4 text-sm font-semibold"
+                  >
+                    <ShieldCheck className="h-5 w-5 text-teal-600" />
+                    {item}
+                  </p>
                 ))}
-                <Link href="/privacy-policy" className="hover:text-[#082033]">Privacy Policy</Link>
-                <Link href="/terms-of-service" className="hover:text-[#082033]">Terms & Conditions</Link>
-                <Link href="/disclaimer" className="hover:text-[#082033]">Disclaimer</Link>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-[#128a8f]">Reach us</p>
-              <div className="mt-5 space-y-3 text-sm font-semibold text-[#526b78]">
-                <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-[#0d9488]" /> +1 (202) 984-8556</p>
-                <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-[#0d9488]" /> hello@alphalegalintake.com</p>
-                <p className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-[#0d9488]" /> 1500 N Grant St STE R Denver, CO 80203 United States</p>
               </div>
             </div>
           </div>
-          <div className="mt-12 border-t border-[#dcebed] pt-8">
-            <p className="text-xs leading-6 text-[#6a828d]">
-              &copy; 2026 Alpha Legal Intake. All rights reserved. Alpha Legal Intake is not a law firm and does not provide legal advice. Lead availability, transfer volume, and qualification results vary by campaign, market, and firm criteria.
+        </div>
+      </section>
+
+      <section id="services" className="py-16 md:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <p className="alpha-eyebrow">Services</p>
+            <h2 className="mt-3 text-3xl font-black md:text-4xl">
+              Legal intake channels built for injury firms.
+            </h2>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {services.map((service) => (
+              <div key={service.title} className="alpha-rounded-card p-7">
+                <CheckCircle2 className="h-7 w-7 text-teal-600" />
+                <h3 className="mt-5 text-xl font-black">{service.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {service.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="why-alpha" className="bg-white py-16 md:py-20">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+          <div>
+            <p className="alpha-eyebrow">Why Alpha</p>
+            <h2 className="mt-3 text-3xl font-black md:text-4xl">
+              A focused intake partner for serious personal injury growth.
+            </h2>
+          </div>
+          <div className="space-y-4 text-slate-600">
+            <p>
+              Alpha Legal Intake helps law firms reduce wasted follow-up time by
+              aligning lead generation, consent capture, and intake routing
+              around motor vehicle accident prospects.
+            </p>
+            <p>
+              Our process emphasizes speed, clear case context, and dependable
+              contact information so your team can prioritize the opportunities
+              that fit your practice.
             </p>
           </div>
+        </div>
+      </section>
+
+      <section id="process" className="py-16 md:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <p className="alpha-eyebrow">Process</p>
+          <h2 className="mt-3 text-3xl font-black md:text-4xl">
+            Four steps from request to intake.
+          </h2>
+          <div className="mt-10 grid gap-5 md:grid-cols-4">
+            {processSteps.map((step, index) => (
+              <div key={step} className="alpha-rounded-card p-6">
+                <span className="text-4xl font-black text-teal-600">
+                  0{index + 1}
+                </span>
+                <p className="mt-5 text-sm font-semibold leading-6 text-slate-700">
+                  {step}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-20">
+        <div className="alpha-cta-panel mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 lg:px-8">
+          <div className="flex justify-center gap-1 text-teal-300">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Star key={index} className="h-5 w-5 fill-current" />
+            ))}
+          </div>
+          <blockquote className="mt-6 text-2xl font-bold leading-10">
+            “Alpha Legal Intake gives our team a cleaner starting point:
+            accident-focused prospects, faster conversations, and the details we
+            need to evaluate fit.”
+          </blockquote>
+          <p className="mt-5 text-sm uppercase tracking-[0.2em] text-teal-200">
+            Client perspective
+          </p>
+        </div>
+      </section>
+
+      <section id="contact" className="py-16 md:py-20">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+          <div>
+            <p className="alpha-eyebrow">Start intake</p>
+            <h2 className="mt-3 text-3xl font-black md:text-4xl">
+              Request qualified MVA lead support.
+            </h2>
+            <p className="mt-4 text-slate-600">
+              Complete the form and Alpha Legal Intake will follow up about your
+              motor vehicle accident lead goals.
+            </p>
+            <ContactDetails
+              className="alpha-card mt-8 p-6"
+              iconClassName="h-4 w-4"
+              textClassName="text-sm text-slate-700"
+            />
+          </div>
+
+          <div className="alpha-card p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                id={LEADID_FORM_FIELD_ID}
+                name={LEADID_FIELD_NAME}
+                data-leadid-mirror="true"
+                type="hidden"
+                defaultValue=""
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="firstName"
+                    className="mb-1 block text-sm font-medium text-slate-800"
+                  >
+                    First Name *
+                  </label>
+                  <input
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    autoComplete="given-name"
+                    aria-invalid={fieldErrors.firstName ? "true" : "false"}
+                    className={`w-full rounded-md border px-3 py-2 transition focus:outline-none focus:ring-2 ${fieldErrors.firstName ? "border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200" : "border-slate-300 focus:border-teal-500 focus:ring-teal-100"}`}
+                  />
+                  {fieldErrors.firstName ? (
+                    <p className="mt-1 text-sm text-red-600">
+                      {fieldErrors.firstName}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <label
+                    htmlFor="lastName"
+                    className="mb-1 block text-sm font-medium text-slate-800"
+                  >
+                    Last Name *
+                  </label>
+                  <input
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    autoComplete="family-name"
+                    aria-invalid={fieldErrors.lastName ? "true" : "false"}
+                    className={`w-full rounded-md border px-3 py-2 transition focus:outline-none focus:ring-2 ${fieldErrors.lastName ? "border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200" : "border-slate-300 focus:border-teal-500 focus:ring-teal-100"}`}
+                  />
+                  {fieldErrors.lastName ? (
+                    <p className="mt-1 text-sm text-red-600">
+                      {fieldErrors.lastName}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="mb-1 block text-sm font-medium text-slate-800"
+                  >
+                    Phone Number *
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    autoComplete="tel"
+                    aria-invalid={fieldErrors.phone ? "true" : "false"}
+                    className={`w-full rounded-md border px-3 py-2 transition focus:outline-none focus:ring-2 ${fieldErrors.phone ? "border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200" : "border-slate-300 focus:border-teal-500 focus:ring-teal-100"}`}
+                  />
+                  {fieldErrors.phone ? (
+                    <p className="mt-1 text-sm text-red-600">
+                      {fieldErrors.phone}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <label
+                    htmlFor="zipCode"
+                    className="mb-1 block text-sm font-medium text-slate-800"
+                  >
+                    Zip Code *
+                  </label>
+                  <input
+                    id="zipCode"
+                    name="zipCode"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    value={formData.zipCode}
+                    onChange={handleInputChange}
+                    aria-invalid={fieldErrors.zipCode ? "true" : "false"}
+                    className={`w-full rounded-md border px-3 py-2 transition focus:outline-none focus:ring-2 ${fieldErrors.zipCode ? "border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200" : "border-slate-300 focus:border-teal-500 focus:ring-teal-100"}`}
+                  />
+                  {fieldErrors.zipCode ? (
+                    <p className="mt-1 text-sm text-red-600">
+                      {fieldErrors.zipCode}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="mb-1 block text-sm font-medium text-slate-800"
+                >
+                  Email (Optional)
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  autoComplete="email"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
+                />
+              </div>
+              <div
+                className={`rounded-md border p-4 ${consentError ? "border-red-400 bg-red-50" : "border-stone-300 bg-stone-50"}`}
+              >
+                <label
+                  htmlFor="leadid_tcpa_disclosure"
+                  className="flex items-start gap-3 text-sm text-slate-700"
+                >
+                  <input
+                    id="leadid_tcpa_disclosure"
+                    type="checkbox"
+                    checked={consentChecked}
+                    onChange={(event) => {
+                      setConsentChecked(event.target.checked);
+                      if (event.target.checked) {
+                        setConsentError("");
+                      }
+                    }}
+                    className="mt-1 h-4 w-4"
+                  />
+                  <span>{fullConsentText}</span>
+                </label>
+                {consentError ? (
+                  <p className="mt-2 text-sm text-red-600">{consentError}</p>
+                ) : null}
+              </div>
+              <button
+                type="submit"
+                disabled={!leadIdReady || isSubmitting}
+                className="alpha-primary-button w-full px-4 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? "Submitting…" : "Request MVA leads"}
+              </button>
+              <p
+                className={`text-sm ${leadIdReady ? "text-emerald-700" : "text-teal-700"}`}
+              >
+                {leadIdStatusMessage}
+              </p>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" className="bg-white py-16 md:py-20">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <p className="alpha-eyebrow">FAQ</p>
+          <h2 className="mt-3 text-3xl font-black md:text-4xl">
+            Common questions.
+          </h2>
+          <div className="mt-8 space-y-4">
+            {faqs.map((faq) => (
+              <div
+                key={faq.question}
+                className="rounded-2xl border border-stone-200 p-6"
+              >
+                <h3 className="font-black">{faq.question}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-20">
+        <div className="alpha-cta-panel mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-6 py-10 sm:px-8 md:flex-row md:items-center lg:px-10">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.22em]">
+              Final CTA
+            </p>
+            <h2 className="mt-3 text-3xl font-black md:text-4xl">
+              Ready to discuss your intake goals?
+            </h2>
+          </div>
+          <a
+            href="#contact"
+            className="rounded-full bg-white px-7 py-3 font-bold text-[#062032] transition hover:bg-teal-50"
+          >
+            Start intake
+          </a>
+        </div>
+      </section>
+
+      <footer className="mt-16 bg-[#062032] py-12 text-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
+          <div>
+            <p className="text-lg font-black">Alpha Legal Intake</p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              Qualified motor vehicle accident lead generation and personal
+              injury intake support.
+            </p>
+          </div>
+          <div>
+            <p className="font-bold">Explore</p>
+            <div className="mt-4 flex flex-col gap-2 text-sm text-slate-400">
+              <a href="#services" className="hover:text-white">
+                Services
+              </a>
+              <a href="#why-alpha" className="hover:text-white">
+                Why Alpha
+              </a>
+              <a href="#process" className="hover:text-white">
+                Process
+              </a>
+              <Link href="/privacy-policy" className="hover:text-white">
+                Privacy Policy
+              </Link>
+              <Link href="/terms-of-service" className="hover:text-white">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
+          <div>
+            <p className="font-bold">Reach Us</p>
+            <ContactDetails
+              className="mt-4"
+              iconClassName="h-4 w-4"
+              textClassName="text-sm text-slate-400"
+            />
+          </div>
+        </div>
+        <div className="mx-auto mt-10 max-w-7xl px-4 text-sm text-slate-500 sm:px-6 lg:px-8">
+          &copy; 2026 Alpha Legal Intake. All rights reserved.
         </div>
       </footer>
     </div>

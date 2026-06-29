@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(result);
-  } catch {
+  } catch (error) {
+    console.error('GET /api/admin/submissions failed', error);
     return NextResponse.json(
       { error: 'Admin data service unavailable. Check MongoDB connection and environment variables.' },
       { status: 503 },

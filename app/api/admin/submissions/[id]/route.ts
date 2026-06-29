@@ -17,7 +17,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const updated = await updateSubmissionStatus(id, status);
     if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ ok: true, submission: updated });
-  } catch {
+  } catch (error) {
+    console.error('PATCH /api/admin/submissions/[id] failed', error);
     return NextResponse.json({ error: 'Update failed. Please verify database connectivity.' }, { status: 503 });
   }
 }
@@ -31,7 +32,8 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
     const deleted = await deleteSubmission(id);
     if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    console.error('DELETE /api/admin/submissions/[id] failed', error);
     return NextResponse.json({ error: 'Delete failed. Please verify database connectivity.' }, { status: 503 });
   }
 }

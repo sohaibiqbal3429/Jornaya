@@ -39,7 +39,7 @@ export function AdminLoginForm() {
       <input className="w-full rounded border border-slate-700 bg-slate-950 p-2" placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       <input className="w-full rounded border border-slate-700 bg-slate-950 p-2" placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       {error && <p className="text-sm text-red-400">{error}</p>}
-      <button disabled={loading} className="w-full rounded bg-[#0d9488] p-2 font-semibold text-white transition hover:bg-[#0f766e] disabled:opacity-70">
+      <button disabled={loading} className="w-full rounded bg-orange-500 p-2 font-semibold disabled:opacity-70">
         {loading ? 'Signing in...' : 'Login'}
       </button>
     </form>

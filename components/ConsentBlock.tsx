@@ -24,14 +24,14 @@ export function TpmoDisclaimer({ text, longText }: TpmoDisclaimerProps) {
     <>
       <div className="tpmo-card rounded-xl border border-slate-700 bg-slate-900/60 p-4">
         <div className="flex items-start gap-3">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#5eead4]" />
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
           <div className="space-y-2">
             <p className="tpmo-text tpmo-preview text-sm leading-relaxed text-gray-300">{fullText}</p>
             {longText ? (
               <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="tpmo-link rounded text-sm font-medium text-[#7dd3fc] transition hover:text-[#5eead4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d9488]"
+                className="tpmo-link rounded text-sm font-medium text-orange-400 transition hover:text-orange-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
               >
                 Learn more
               </button>
@@ -84,7 +84,7 @@ export function ConsentCheckbox({
           onChange={(e) => onChange(e.target.checked)}
           aria-required="true"
           aria-invalid={hasError}
-          className="consent-checkbox mt-1 h-5 w-5 rounded border-slate-500 bg-slate-950 text-[#0d9488] focus:ring-2 focus:ring-[#0d9488]"
+          className="consent-checkbox mt-1 h-5 w-5 rounded border-slate-500 bg-slate-950 text-orange-500 focus:ring-2 focus:ring-orange-500"
         />
         <span className="consent-label text-sm leading-relaxed text-gray-300">{label}</span>
       </label>
